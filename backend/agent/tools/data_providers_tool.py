@@ -7,6 +7,7 @@ from agent.tools.data_providers.YahooFinanceProvider import YahooFinanceProvider
 from agent.tools.data_providers.AmazonProvider import AmazonProvider
 from agent.tools.data_providers.ZillowProvider import ZillowProvider
 from agent.tools.data_providers.TwitterProvider import TwitterProvider
+from agent.tools.data_providers.InstagramProvider import InstagramProvider
 
 class DataProvidersTool(Tool):
     """Tool for making requests to various data providers."""
@@ -19,7 +20,8 @@ class DataProvidersTool(Tool):
             "yahoo_finance": YahooFinanceProvider(),
             "amazon": AmazonProvider(),
             "zillow": ZillowProvider(),
-            "twitter": TwitterProvider()
+            "twitter": TwitterProvider(),
+            "instagram": InstagramProvider()
         }
 
     @openapi_schema({
