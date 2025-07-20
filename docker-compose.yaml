@@ -47,6 +47,7 @@ services:
       - REDIS_SSL=False
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
+      - SELF_HOSTED=true
     depends_on:
       redis:
         condition: service_healthy
@@ -61,7 +62,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    command: uv run dramatiq --skip-logging --processes 4 --threads 4 run_agent_background
+    entrypoint: []
+    command: /bin/sh -c "cd /app && uv run dramatiq --skip-logging --processes 4 --threads 4 run_agent_background"
     volumes:
       - ./backend/.env:/app/.env:ro
     env_file:
@@ -73,6 +75,7 @@ services:
       - REDIS_SSL=False
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
+      - SELF_HOSTED=true
     depends_on:
       redis:
         condition: service_healthy
@@ -88,6 +91,8 @@ services:
       - "3000:3000"
     volumes:
       - ./frontend/.env.local:/app/.env.local:ro
+    environment:
+      - NODE_ENV=development
     depends_on:
       - backend
 

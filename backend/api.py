@@ -67,6 +67,14 @@ async def lifespan(app: FastAPI):
             logger.error(f"Failed to initialize Redis connection: {e}")
             # Continue without Redis - the application will handle Redis failures gracefully
         
+        # Initialize feature flags for self-hosting
+        try:
+            from flags.init_flags import init_self_hosting_flags
+            await init_self_hosting_flags()
+        except Exception as e:
+            logger.error(f"Failed to initialize self-hosting feature flags: {e}")
+            # Continue even if flag initialization fails
+        
         # Start background tasks
         # asyncio.create_task(agent_api.restore_running_agent_runs())
         

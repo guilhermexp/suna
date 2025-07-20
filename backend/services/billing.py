@@ -7,6 +7,7 @@ stripe listen --forward-to localhost:8000/api/billing/webhook
 from fastapi import APIRouter, HTTPException, Depends, Request
 from typing import Optional, Dict, Tuple
 import stripe
+import os
 from datetime import datetime, timezone
 from utils.logger import logger
 from utils.config import config, EnvMode
@@ -1268,8 +1269,8 @@ async def get_usage_logs_endpoint(
         db = DBConnection()
         client = await db.client
         
-        # Check if we're in local development mode
-        if config.ENV_MODE == EnvMode.LOCAL:
+        # Allow usage logs in local development mode with self-hosting enabled
+        if config.ENV_MODE == EnvMode.LOCAL and not os.getenv("SELF_HOSTED", "false").lower() == "true":
             logger.info("Running in local development mode - usage logs are not available")
             return {
                 "logs": [], 
