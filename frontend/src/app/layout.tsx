@@ -5,9 +5,10 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 import { Toaster } from '@/components/ui/sonner';
-import { Analytics } from '@vercel/analytics/react';
-import { GoogleAnalytics } from '@next/third-parties/google';
-import { SpeedInsights } from '@vercel/speed-insights/next';
+// Analytics imports - DISABLED
+// import { Analytics } from '@vercel/analytics/react';
+// import { GoogleAnalytics } from '@next/third-parties/google';
+// import { SpeedInsights } from '@vercel/speed-insights/next';
 import Script from 'next/script';
 
 const geistSans = Geist({
@@ -118,7 +119,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Google Tag Manager - Only in production */}
+        {/* Google Tag Manager - DISABLED
         {isProduction && (
           <>
             <Script id="google-tag-manager" strategy="afterInteractive">
@@ -130,13 +131,13 @@ export default function RootLayout({
             </Script>
             <Script async src="https://cdn.tolt.io/tolt.js" data-tolt={process.env.NEXT_PUBLIC_TOLT_REFERRAL_ID}></Script>
           </>
-        )}
+        )} */}
       </head>
 
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans bg-background`}
       >
-        {/* Google Tag Manager (noscript) - Only in production */}
+        {/* Google Tag Manager (noscript) - DISABLED
         {isProduction && (
           <noscript>
             <iframe
@@ -146,7 +147,7 @@ export default function RootLayout({
               style={{ display: 'none', visibility: 'hidden' }}
             />
           </noscript>
-        )}
+        )} */}
 
         <ThemeProvider
           attribute="class"
@@ -158,14 +159,14 @@ export default function RootLayout({
             {children}
             <Toaster />
           </Providers>
-          {/* Analytics - Only in production */}
+          {/* Analytics - DISABLED
           {isProduction && (
             <>
               <Analytics />
               <GoogleAnalytics gaId="G-6ETJFB3PT3" />
               <SpeedInsights />
             </>
-          )}
+          )} */}
         </ThemeProvider>
       </body>
     </html>
