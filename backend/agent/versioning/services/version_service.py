@@ -44,30 +44,58 @@ class VersionService:
         version_name = version_name or str(version_number)
         current_active = await self.version_repo.find_active_version(agent_id)
         
+        # Debug logging for Pipedream MCP issues
+        from utils.logger import logger
+        logger.info(f"Creating version - processing MCPs")
+        logger.info(f"Configured MCPs count: {len(configured_mcps)}")
+        logger.info(f"Custom MCPs count: {len(custom_mcps)}")
+        
+        # Process configured MCPs with better error handling
+        processed_configured_mcps = []
+        for idx, mcp in enumerate(configured_mcps):
+            try:
+                logger.info(f"Processing configured MCP {idx}: {mcp}")
+                # Handle both enabledTools and enabled_tools field names
+                enabled_tools_value = mcp.get('enabledTools', mcp.get('enabled_tools', []))
+                processed_mcp = MCPConfiguration(
+                    name=mcp['name'],
+                    type=mcp.get('type', 'sse'),
+                    config=mcp.get('config', {}),
+                    enabled_tools=enabled_tools_value if isinstance(enabled_tools_value, list) else []
+                )
+                processed_configured_mcps.append(processed_mcp)
+            except Exception as e:
+                logger.error(f"Error processing configured MCP {idx}: {e}")
+                logger.error(f"MCP data: {mcp}")
+                raise ValueError(f"Invalid configured MCP at index {idx}: {str(e)}")
+        
+        # Process custom MCPs with better error handling
+        processed_custom_mcps = []
+        for idx, mcp in enumerate(custom_mcps):
+            try:
+                logger.info(f"Processing custom MCP {idx}: {mcp}")
+                # Handle both enabledTools and enabled_tools field names
+                enabled_tools_value = mcp.get('enabledTools', mcp.get('enabled_tools', []))
+                processed_mcp = MCPConfiguration(
+                    name=mcp['name'],
+                    type=mcp.get('type', 'sse'),
+                    config=mcp.get('config', {}),
+                    enabled_tools=enabled_tools_value if isinstance(enabled_tools_value, list) else []
+                )
+                processed_custom_mcps.append(processed_mcp)
+            except Exception as e:
+                logger.error(f"Error processing custom MCP {idx}: {e}")
+                logger.error(f"MCP data: {mcp}")
+                raise ValueError(f"Invalid custom MCP at index {idx}: {str(e)}")
+        
         version = AgentVersion(
             version_id=VersionId.generate(),
             agent_id=agent_id,
             version_number=version_number,
             version_name=version_name,
             system_prompt=SystemPrompt(system_prompt),
-            configured_mcps=[
-                MCPConfiguration(
-                    name=mcp['name'],
-                    type=mcp.get('type', 'sse'),
-                    config=mcp.get('config', {}),
-                    enabled_tools=mcp.get('enabledTools', [])
-                )
-                for mcp in configured_mcps
-            ],
-            custom_mcps=[
-                MCPConfiguration(
-                    name=mcp['name'],
-                    type=mcp.get('type', 'sse'),
-                    config=mcp.get('config', {}),
-                    enabled_tools=mcp.get('enabledTools', [])
-                )
-                for mcp in custom_mcps
-            ],
+            configured_mcps=processed_configured_mcps,
+            custom_mcps=processed_custom_mcps,
             tool_configuration=ToolConfiguration(tools=agentpress_tools),
             status=VersionStatus.ACTIVE,
             created_at=datetime.utcnow(),

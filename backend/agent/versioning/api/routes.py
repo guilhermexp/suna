@@ -96,6 +96,13 @@ async def create_version(
         if not agent_result.data:
             raise HTTPException(status_code=404, detail="Agent not found")
         
+        # Log request data for debugging Pipedream MCP issue
+        logger.info(f"Creating version for agent {agent_id}")
+        logger.info(f"Request data - system_prompt length: {len(request.system_prompt)}")
+        logger.info(f"Request data - configured_mcps: {request.configured_mcps}")
+        logger.info(f"Request data - custom_mcps: {request.custom_mcps}")
+        logger.info(f"Request data - agentpress_tools: {list(request.agentpress_tools.keys())}")
+        
         agent_id_obj = AgentId.from_string(agent_id)
         user_id_obj = UserId.from_string(user_id)
         
