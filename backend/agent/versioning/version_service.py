@@ -215,7 +215,8 @@ class VersionService:
             previous_version_id=previous_version_id
         )
         
-        data = {
+        # Try new schema first (with config column)
+        data_new_schema = {
             'version_id': version.version_id,
             'agent_id': version.agent_id,
             'version_number': version.version_number,
@@ -236,7 +237,36 @@ class VersionService:
             }
         }
         
-        result = await client.table('agent_versions').insert(data).execute()
+        try:
+            result = await client.table('agent_versions').insert(data_new_schema).execute()
+        except Exception as e:
+            # If new schema fails, try old schema (with direct columns)
+            logger.warning(f"Failed with new schema, trying old schema: {str(e)}")
+            data_old_schema = {
+                'version_id': version.version_id,
+                'agent_id': version.agent_id,
+                'version_number': version.version_number,
+                'version_name': version.version_name,
+                'system_prompt': version.system_prompt,
+                'configured_mcps': version.configured_mcps,
+                'custom_mcps': version.custom_mcps,
+                'agentpress_tools': version.agentpress_tools,
+                'is_active': version.is_active,
+                'created_at': version.created_at.isoformat(),
+                'updated_at': version.updated_at.isoformat(),
+                'created_by': version.created_by,
+                'change_description': version.change_description,
+                'previous_version_id': version.previous_version_id,
+                'config': {
+                    'system_prompt': version.system_prompt,
+                    'tools': {
+                        'agentpress': version.agentpress_tools,
+                        'mcp': version.configured_mcps,
+                        'custom_mcp': version.custom_mcps
+                    }
+                }
+            }
+            result = await client.table('agent_versions').insert(data_old_schema).execute()
         
         if not result.data:
             raise Exception("Failed to create version")

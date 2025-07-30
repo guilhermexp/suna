@@ -1,0 +1,90 @@
+#!/bin/bash
+
+# Suna Update Script - Updates and rebuilds the entire Suna stack
+# This script pulls latest changes, cleans Docker, and rebuilds everything
+
+# Color codes for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_status() {
+    echo -e "${GREEN}[SUNA]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+# Store the original directory
+ORIGINAL_DIR=$(pwd)
+
+# Define the Suna project directory
+SUNA_DIR="/Users/guilhermevarela/Documents/Repositorios/sunakortix"
+
+# Check if the directory exists
+if [ ! -d "$SUNA_DIR" ]; then
+    print_error "Suna directory not found at: $SUNA_DIR"
+    exit 1
+fi
+
+# Change to Suna directory
+cd "$SUNA_DIR" || exit 1
+
+print_status "Starting Suna update process..."
+
+# Step 1: Pull latest changes
+print_status "Pulling latest changes from git..."
+if git pull; then
+    print_status "Git pull successful"
+else
+    print_error "Git pull failed"
+    cd "$ORIGINAL_DIR"
+    exit 1
+fi
+
+# Step 2: Stop all containers
+print_status "Stopping all containers..."
+if docker compose down; then
+    print_status "Containers stopped successfully"
+else
+    print_warning "Some containers may not have stopped properly"
+fi
+
+# Step 3: Clean up Docker system
+print_status "Cleaning Docker system..."
+docker system prune -f
+print_status "Docker system cleaned"
+
+# Step 4: Clean up Docker builder
+print_status "Cleaning Docker builder cache..."
+docker builder prune -f
+print_status "Docker builder cache cleaned"
+
+# Step 5: Build and start containers
+print_status "Building and starting containers..."
+if docker compose up -d --build; then
+    print_status "Containers built and started successfully!"
+    
+    # Show container status
+    echo ""
+    print_status "Container status:"
+    docker compose ps
+else
+    print_error "Failed to build/start containers"
+    cd "$ORIGINAL_DIR"
+    exit 1
+fi
+
+# Return to original directory
+cd "$ORIGINAL_DIR"
+
+echo ""
+print_status "Suna update completed successfully! 🚀"
+print_status "Access Suna at: http://localhost:3000"

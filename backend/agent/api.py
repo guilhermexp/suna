@@ -59,7 +59,7 @@ class InitiateAgentResponse(BaseModel):
 class AgentCreateRequest(BaseModel):
     name: str
     description: Optional[str] = None
-    system_prompt: str
+    system_prompt: Optional[str] = None
     configured_mcps: Optional[List[Dict[str, Any]]] = []
     custom_mcps: Optional[List[Dict[str, Any]]] = []
     agentpress_tools: Optional[Dict[str, Any]] = {}
@@ -72,7 +72,7 @@ class AgentVersionResponse(BaseModel):
     agent_id: str
     version_number: int
     version_name: str
-    system_prompt: str
+    system_prompt: Optional[str] = None
     configured_mcps: List[Dict[str, Any]]
     custom_mcps: List[Dict[str, Any]]
     agentpress_tools: Dict[str, Any]
@@ -82,7 +82,7 @@ class AgentVersionResponse(BaseModel):
     created_by: Optional[str] = None
 
 class AgentVersionCreateRequest(BaseModel):
-    system_prompt: str
+    system_prompt: Optional[str] = None
     configured_mcps: Optional[List[Dict[str, Any]]] = []
     custom_mcps: Optional[List[Dict[str, Any]]] = []
     agentpress_tools: Optional[Dict[str, Any]] = {}
@@ -105,7 +105,7 @@ class AgentResponse(BaseModel):
     account_id: str
     name: str
     description: Optional[str] = None
-    system_prompt: str
+    system_prompt: Optional[str] = None
     configured_mcps: List[Dict[str, Any]]
     custom_mcps: List[Dict[str, Any]]
     agentpress_tools: Dict[str, Any]
