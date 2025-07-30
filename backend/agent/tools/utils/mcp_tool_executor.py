@@ -6,13 +6,13 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client
 from mcp.client.streamable_http import streamablehttp_client
-from mcp_module import mcp_manager
+from mcp_module import mcp_service
 from utils.logger import logger
 
 
 class MCPToolExecutor:
     def __init__(self, custom_tools: Dict[str, Dict[str, Any]], tool_wrapper=None):
-        self.mcp_manager = mcp_manager
+        self.mcp_manager = mcp_service
         self.custom_tools = custom_tools
         self.tool_wrapper = tool_wrapper
     
@@ -67,10 +67,9 @@ class MCPToolExecutor:
         
         try:
             import os
-            from pipedream.facade import PipedreamManager
+            from pipedream import connection_service
             
-            pipedream_manager = PipedreamManager()
-            http_client = pipedream_manager._http_client
+            http_client = connection_service._http_client
             
             access_token = await http_client._ensure_access_token()
             
