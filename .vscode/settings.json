@@ -1,4 +1,5 @@
 {
   "python.analysis.typeCheckingMode": "off",
-  "claudeCodeChat.permissions.yoloMode": true
+  "claudeCodeChat.permissions.yoloMode": true,
+  "cursorpyright.analysis.typeCheckingMode": "off"
 }
