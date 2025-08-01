@@ -61,42 +61,42 @@ const INITIAL_COMPONENTS: Partial<Components> = {
   },
   ul: function UnorderedList({ children, ...props }: any) {
     return (
-      <ul className="list-disc pl-5 my-2" {...props}>
+      <ul className="list-disc pl-6 my-3 space-y-1 text-zinc-700 dark:text-zinc-300" {...props}>
         {children}
       </ul>
     );
   },
   ol: function OrderedList({ children, ...props }: any) {
     return (
-      <ol className="list-decimal pl-5 my-2" {...props}>
+      <ol className="list-decimal pl-6 my-3 space-y-1 text-zinc-700 dark:text-zinc-300" {...props}>
         {children}
       </ol>
     );
   },
   li: function ListItem({ children, ...props }: any) {
     return (
-      <li className="my-1" {...props}>
+      <li className="my-1 leading-relaxed" {...props}>
         {children}
       </li>
     );
   },
   h1: function H1({ children, ...props }: any) {
     return (
-      <h1 className="text-2xl font-bold my-3" {...props}>
+      <h1 className="text-2xl font-bold my-4 text-zinc-900 dark:text-zinc-100" {...props}>
         {children}
       </h1>
     );
   },
   h2: function H2({ children, ...props }: any) {
     return (
-      <h2 className="text-xl font-bold my-2" {...props}>
+      <h2 className="text-xl font-bold my-3 text-zinc-900 dark:text-zinc-100" {...props}>
         {children}
       </h2>
     );
   },
   h3: function H3({ children, ...props }: any) {
     return (
-      <h3 className="text-lg font-bold my-2" {...props}>
+      <h3 className="text-lg font-bold my-2 text-zinc-900 dark:text-zinc-100" {...props}>
         {children}
       </h3>
     );
@@ -115,7 +115,7 @@ const INITIAL_COMPONENTS: Partial<Components> = {
     return (
       <a
         href={href}
-        className="text-primary hover:underline dark:text-blue-400"
+        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline decoration-1 underline-offset-2 transition-colors font-medium"
         target="_blank"
         rel="noopener noreferrer"
         {...props}

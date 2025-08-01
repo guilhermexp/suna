@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CTASection } from '@/components/home/sections/cta-section';
+// import { CTASection } from '@/components/home/sections/cta-section';
 // import { FAQSection } from "@/components/sections/faq-section";
 import { FooterSection } from '@/components/home/sections/footer-section';
 import { HeroSection } from '@/components/home/sections/hero-section';
@@ -27,7 +27,7 @@ export default function Home() {
             </div>
             {/* <TestimonialSection /> */}
             {/* <FAQSection /> */}
-            <CTASection />
+            {/* <CTASection /> */}
             <FooterSection />
           </div>
         </main>

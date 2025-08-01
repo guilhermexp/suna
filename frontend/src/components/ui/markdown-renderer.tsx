@@ -57,6 +57,16 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
               {children}
             </td>
           ),
+          a: ({ href, children }) => (
+            <a 
+              href={href} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline decoration-1 underline-offset-2 transition-colors"
+            >
+              {children}
+            </a>
+          ),
         }}
       >
         {content}

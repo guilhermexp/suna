@@ -83,8 +83,14 @@ export const MarkdownRenderer = forwardRef<
             h3: ({ node, ...props }) => (
               <h3 className="text-lg font-bold my-2" {...props} />
             ),
-            a: ({ node, ...props }) => (
-              <a className="text-primary hover:underline" {...props} />
+            a: ({ node, href, ...props }) => (
+              <a 
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline decoration-1 underline-offset-2 transition-colors font-medium"
+                {...props} 
+              />
             ),
             p: ({ node, ...props }) => (
               <p className="my-2 font-sans cjk-text" {...props} />
