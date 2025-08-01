@@ -12,7 +12,8 @@ import {
   Share2,
   X,
   Check,
-  History
+  History,
+  Star
 } from "lucide-react"
 import { toast } from "sonner"
 import { usePathname, useRouter } from "next/navigation"
@@ -45,7 +46,7 @@ import { useDeleteOperation } from '@/contexts/DeleteOperationContext'
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ThreadWithProject } from '@/hooks/react-query/sidebar/use-sidebar';
-import { processThreadsWithProjects, useDeleteMultipleThreads, useDeleteThread, useProjects, useThreads } from '@/hooks/react-query/sidebar/use-sidebar';
+import { processThreadsWithProjects, useDeleteMultipleThreads, useDeleteThread, useProjects, useThreads, useToggleThreadFavorite } from '@/hooks/react-query/sidebar/use-sidebar';
 import { projectKeys, threadKeys } from '@/hooks/react-query/sidebar/keys';
 
 export function NavAgents() {
@@ -83,6 +84,7 @@ export function NavAgents() {
     mutate: deleteMultipleThreadsMutation,
     isPending: isDeletingMultiple
   } = useDeleteMultipleThreads();
+  const { mutate: toggleFavoriteMutation } = useToggleThreadFavorite();
 
   const combinedThreads: ThreadWithProject[] =
     !isProjectsLoading && !isThreadsLoading ?
@@ -184,6 +186,26 @@ export function NavAgents() {
   const handleDeleteThread = async (threadId: string, threadName: string) => {
     setThreadToDelete({ id: threadId, name: threadName });
     setIsDeleteDialogOpen(true);
+  };
+
+  // Function to handle toggle favorite
+  const handleToggleFavorite = async (threadId: string, currentStatus: boolean) => {
+    try {
+      toggleFavoriteMutation(
+        { threadId, isFavorite: !currentStatus },
+        {
+          onSuccess: () => {
+            toast.success(currentStatus ? 'Removed from favorites' : 'Added to favorites');
+          },
+          onError: () => {
+            toast.error('Failed to update favorite status');
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error('Failed to update favorite status');
+    }
   };
 
   // Function to handle multi-delete
@@ -478,6 +500,12 @@ export function NavAgents() {
                               }}>
                                 <Share2 className="text-muted-foreground" />
                                 <span>Share Chat</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleToggleFavorite(thread.threadId, thread.isFavorite || false)}
+                              >
+                                <Star className={`text-muted-foreground ${thread.isFavorite ? 'fill-current' : ''}`} />
+                                <span>{thread.isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
                                 <a

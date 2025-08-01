@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Bot, Menu, Store, Plus, Zap, Plug, ChevronRight, Loader2 } from 'lucide-react';
 
 import { NavAgents } from '@/components/sidebar/nav-agents';
+import { NavFavorites } from '@/components/sidebar/nav-favorites';
 import { NavUserWithTeams } from '@/components/sidebar/nav-user-with-teams';
 import { KortixLogo } from '@/components/sidebar/kortix-logo';
 import {
@@ -234,6 +235,11 @@ export function SidebarLeft({
             </Link>
           )}
         </SidebarGroup>
+        
+        {/* Favorites Section */}
+        <NavFavorites />
+        
+        {/* Tasks Section */}
         <NavAgents />
       </SidebarContent>
       <SidebarFooter>

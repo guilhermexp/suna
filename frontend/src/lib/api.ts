@@ -59,6 +59,7 @@ export type Thread = {
   account_id: string | null;
   project_id?: string | null;
   is_public?: boolean;
+  is_favorite?: boolean;
   created_at: string;
   updated_at: string;
   [key: string]: any; // Allow additional properties to handle database fields
@@ -497,6 +498,7 @@ export const getThreads = async (projectId?: string): Promise<Thread[]> => {
       thread_id: thread.thread_id,
       account_id: thread.account_id,
       project_id: thread.project_id,
+      is_favorite: thread.is_favorite,
       created_at: thread.created_at,
       updated_at: thread.updated_at,
       metadata: thread.metadata,
@@ -2223,6 +2225,37 @@ export const getAgentBuilderChatHistory = async (agentId: string): Promise<{mess
 
   const data = await response.json();
   console.log('[API] Agent builder chat history fetched:', data);
+
+  return data;
+};
+
+export const toggleThreadFavorite = async (threadId: string, isFavorite?: boolean): Promise<{ thread_id: string; is_favorite: boolean; status: string }> => {
+  const supabase = createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new NoAccessTokenAvailableError();
+  }
+
+  const response = await fetch(`${API_URL}/thread/${threadId}/favorite`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ is_favorite: isFavorite }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => 'No error details available');
+    console.error(`Error toggling thread favorite: ${response.status} ${response.statusText}`, errorText);
+    throw new Error(`Error toggling thread favorite: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  console.log('[API] Thread favorite toggled:', data);
 
   return data;
 };

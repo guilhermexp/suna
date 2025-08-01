@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { FooterSection } from '@/components/home/sections/footer-section';
 import { HeroSection } from '@/components/home/sections/hero-section';
 import { ModalProviders } from '@/providers/modal-providers';
-import { HeroVideoSection } from '@/components/home/sections/hero-video-section';
+// import { HeroVideoSection } from '@/components/home/sections/hero-video-section';
 import { BackgroundAALChecker } from '@/components/auth/background-aal-checker';
 
 export default function Home() {
@@ -22,9 +22,9 @@ export default function Home() {
             {/* <QuoteSection /> */}
             {/* <FeatureSection /> */}
             {/* <GrowthSection /> */}
-            <div className="pb-10 mx-auto">
+            {/* <div className="pb-10 mx-auto">
               <HeroVideoSection />
-            </div>
+            </div> */}
             {/* <TestimonialSection /> */}
             {/* <FAQSection /> */}
             {/* <CTASection /> */}
