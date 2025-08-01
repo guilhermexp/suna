@@ -1,7 +1,7 @@
 import React, { forwardRef, useEffect, useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Square, Loader2, ArrowUp } from 'lucide-react';
+import { Square, Loader2, ArrowUp, Plug } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UploadedFile } from './chat-input';
 import { FileUploadHandler } from './file-upload-handler';
@@ -17,6 +17,12 @@ import { TooltipProvider, TooltipTrigger } from '@radix-ui/react-tooltip';
 import { BillingModal } from '@/components/billing/billing-modal';
 import ChatDropdown from './chat-dropdown';
 import { handleFiles } from './file-upload-handler';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { useAgent } from '@/hooks/react-query/agents/use-agents';
 
 interface MessageInputProps {
   value: string;
@@ -95,7 +101,11 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
     ref,
   ) => {
     const [billingModalOpen, setBillingModalOpen] = useState(false);
+    const [integrationsOpen, setIntegrationsOpen] = useState(false);
     const { enabled: customAgentsEnabled, loading: flagsLoading } = useFeatureFlag('custom_agents');
+    
+    // Fetch agent data to get integrations
+    const { data: agentData } = useAgent(selectedAgentId || '');
 
     useEffect(() => {
       const textarea = ref as React.RefObject<HTMLTextAreaElement>;
@@ -245,6 +255,47 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
               onOpenChange={setBillingModalOpen}
               returnUrl={typeof window !== 'undefined' ? window.location.href : '/'}
             />
+
+            {/* Agent Integrations Button */}
+            {isLoggedIn && selectedAgentId && agentData && (
+              <Popover open={integrationsOpen} onOpenChange={setIntegrationsOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="w-8 h-8 p-0 rounded-lg hover:bg-muted/50"
+                    disabled={loading || (disabled && !isAgentRunning)}
+                  >
+                    <Plug className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" align="end" side="top">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm">Agent Integrations</h4>
+                    {(agentData.configured_mcps && agentData.configured_mcps.length > 0) || 
+                     (agentData.custom_mcps && agentData.custom_mcps.length > 0) ? (
+                      <div className="space-y-2">
+                        {agentData.configured_mcps?.map((mcp, index) => (
+                          <div key={`configured-${index}`} className="flex items-center gap-2 text-sm">
+                            <div className="w-2 h-2 rounded-full bg-green-500" />
+                            <span className="text-muted-foreground">{mcp.name}</span>
+                          </div>
+                        ))}
+                        {agentData.custom_mcps?.map((mcp, index) => (
+                          <div key={`custom-${index}`} className="flex items-center gap-2 text-sm">
+                            <div className="w-2 h-2 rounded-full bg-blue-500" />
+                            <span className="text-muted-foreground">{mcp.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No integrations configured</p>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
 
             {isLoggedIn && <VoiceRecorder
               onTranscription={onTranscription}

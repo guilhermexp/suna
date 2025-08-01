@@ -57,8 +57,8 @@ export function NavFavorites() {
     router.push(url);
   };
 
-  // Don't render if no favorites
-  if (favoriteThreads.length === 0) {
+  // Don't render if no favorites or sidebar is collapsed
+  if (favoriteThreads.length === 0 || state === 'collapsed') {
     return null;
   }
 

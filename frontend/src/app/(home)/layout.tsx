@@ -1,4 +1,5 @@
 import { Navbar } from '@/components/home/sections/navbar';
+import { FooterSection } from '@/components/home/sections/footer-section';
 
 export default function HomeLayout({
   children,
@@ -11,6 +12,7 @@ export default function HomeLayout({
       <div className="block w-px h-full border-r border-border fixed top-0 right-6 z-10"></div>
       <Navbar />
       {children}
+      <FooterSection />
     </div>
   );
 }

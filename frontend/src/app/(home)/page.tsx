@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 // import { CTASection } from '@/components/home/sections/cta-section';
 // import { FAQSection } from "@/components/sections/faq-section";
-import { FooterSection } from '@/components/home/sections/footer-section';
+
 import { HeroSection } from '@/components/home/sections/hero-section';
 import { ModalProviders } from '@/providers/modal-providers';
 // import { HeroVideoSection } from '@/components/home/sections/hero-video-section';
@@ -28,7 +28,7 @@ export default function Home() {
             {/* <TestimonialSection /> */}
             {/* <FAQSection /> */}
             {/* <CTASection /> */}
-            <FooterSection />
+
           </div>
         </main>
       </BackgroundAALChecker>

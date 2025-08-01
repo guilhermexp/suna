@@ -283,17 +283,11 @@ export function NavUserWithTeams({
               {/* User Settings Section */}
               <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
-                  <Link href="/settings/billing">
-                    <CreditCard className="h-4 w-4" />
-                    Billing
+                  <Link href="/settings/usage-logs">
+                    <Settings className="h-4 w-4" />
+                    Configurações
                   </Link>
                 </DropdownMenuItem>
-                {isLocalMode() && <DropdownMenuItem asChild>
-                  <Link href="/settings/env-manager">
-                    <KeyRound className="h-4 w-4" />
-                    Local .Env Manager
-                  </Link>
-                </DropdownMenuItem>}
                 {/* <DropdownMenuItem asChild>
                   <Link href="/settings">
                     <Settings className="mr-2 h-4 w-4" />

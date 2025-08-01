@@ -7,9 +7,9 @@ import { useAvailableModels } from '@/hooks/react-query/subscriptions/use-model'
 
 export const STORAGE_KEY_MODEL = 'suna-preferred-model-v3';
 export const STORAGE_KEY_CUSTOM_MODELS = 'customModels';
-export const DEFAULT_PREMIUM_MODEL_ID = 'claude-sonnet-4';
+export const DEFAULT_PREMIUM_MODEL_ID = 'moonshotai/kimi-k2';
 // export const DEFAULT_FREE_MODEL_ID = 'moonshotai/kimi-k2';
-export const DEFAULT_FREE_MODEL_ID = 'claude-sonnet-4';
+export const DEFAULT_FREE_MODEL_ID = 'moonshotai/kimi-k2';
 
 export type SubscriptionStatus = 'no_subscription' | 'active';
 
@@ -31,9 +31,9 @@ export interface CustomModel {
 // SINGLE SOURCE OF TRUTH for all model data - aligned with backend constants
 export const MODELS = {
   // Free tier models (available to all users)
-  'claude-sonnet-4': { 
+  'moonshotai/kimi-k2': { 
     tier: 'free',
-    priority: 100, 
+    priority: 99, 
     recommended: true,
     lowQuality: false
   },
@@ -52,9 +52,9 @@ export const MODELS = {
   // },
 
   // Premium/Paid tier models (require subscription) - except specific free models
-  'moonshotai/kimi-k2': { 
+  'claude-sonnet-4': { 
     tier: 'free', 
-    priority: 99,
+    priority: 100,
     recommended: false,
     lowQuality: false
   },
@@ -208,7 +208,7 @@ export const useModelSelection = () => {
         },
         { 
           id: DEFAULT_PREMIUM_MODEL_ID, 
-          label: 'Sonnet 4', 
+          label: 'moonshotai/kimi-k2', 
           requiresSubscription: true, 
           priority: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.priority || 100
         },

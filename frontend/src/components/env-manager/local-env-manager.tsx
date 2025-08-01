@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, EyeOff, Plus, Trash } from "lucide-react";
+import { Eye, EyeOff, Plus, Trash, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { isLocalMode } from "@/lib/config";
@@ -11,6 +11,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { backendApi } from "@/lib/api-client";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface APIKeyForm {
     [key: string]: string;
@@ -19,6 +24,7 @@ interface APIKeyForm {
 export function LocalEnvManager() {
   const queryClient = useQueryClient();
   const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({});
+  const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
   const [newApiKeys, setNewApiKeys] = useState<{key: string, value: string, id: string}[]>([]);
 
   const {data: apiKeys, isLoading} = useQuery({
@@ -143,27 +149,46 @@ export function LocalEnvManager() {
         <CardContent>
             <form onSubmit={handleSubmit(handleSave)} className="space-y-4">
                 {keysArray && keysArray?.map(key => (
-                  
-                    <div key={key.id} className="space-y-2">
-                        <Label htmlFor={key.id}>{key.name}</Label>
-                        <div className="relative">  
-                            <Input 
-                              id={key.id} 
-                              type={visibleKeys[key.id] ? 'text' : 'password'}
-                              placeholder={key.name}
-                              {...register(key.id)}
-                            />
-                            <Button 
-                              type="button" 
-                              variant="ghost" 
-                              className="absolute right-0 top-0 h-full px-3"
-                              onClick={() => toggleKeyVisibility(key.id)}>
-                                {visibleKeys[key.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </Button>
+                    <Collapsible 
+                      key={key.id}
+                      open={expandedKeys[key.id]}
+                      onOpenChange={(open) => setExpandedKeys(prev => ({ ...prev, [key.id]: open }))}
+                    >
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="w-full justify-between p-2 hover:bg-accent/50"
+                        >
+                          <span className="font-medium">{key.name}</span>
+                          {expandedKeys[key.id] ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="px-2 pb-4">
+                        <div className="space-y-2 pt-2">
+                            <div className="relative">  
+                                <Input 
+                                  id={key.id} 
+                                  type={visibleKeys[key.id] ? 'text' : 'password'}
+                                  placeholder={key.name}
+                                  {...register(key.id)}
+                                />
+                                <Button 
+                                  type="button" 
+                                  variant="ghost" 
+                                  className="absolute right-0 top-0 h-full px-3"
+                                  onClick={() => toggleKeyVisibility(key.id)}>
+                                    {visibleKeys[key.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </Button>
+                            </div>
+                            {errors[key.id] && <p className="text-red-500">{errors[key.id]?.message}</p>}
                         </div>
-                        {errors[key.id] && <p className="text-red-500">{errors[key.id]?.message}</p>}
-                    </div>
-                    
+                      </CollapsibleContent>
+                    </Collapsible>
                 ))}
 
                 <div className="space-y-4">  
