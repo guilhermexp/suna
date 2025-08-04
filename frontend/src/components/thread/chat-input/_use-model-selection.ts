@@ -106,6 +106,12 @@ export const MODELS = {
   //   recommended: false,
   //   lowQuality: false
   // },
+  'openrouter/z-ai/glm-4.5': { 
+    tier: 'premium', 
+    priority: 95,
+    recommended: false,
+    lowQuality: false
+  },
 };
 
 // Helper to check if a user can access a model based on subscription status

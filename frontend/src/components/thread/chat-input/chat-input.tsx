@@ -209,17 +209,9 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
               onAgentSelect(savedAgentId);
             }
           } else {
-            const defaultSunaAgent = agents.find(agent => agent.metadata?.is_suna_default);
-            if (defaultSunaAgent) {
-              console.log('Auto-selecting default Suna agent:', defaultSunaAgent.agent_id);
-              onAgentSelect(defaultSunaAgent.agent_id);
-            } else if (agents.length > 0) {
-              console.log('No default Suna agent found, selecting first available agent:', agents[0].agent_id);
-              onAgentSelect(agents[0].agent_id);
-            } else {
-              console.log('No agents available, keeping undefined');
-              onAgentSelect(undefined);
-            }
+            // Don't auto-select any agent - let the user choose
+            console.log('No saved agent preference, keeping selection undefined (Suna default)');
+            onAgentSelect(undefined);
           }
         } else {
           console.log('Skipping localStorage load:', {

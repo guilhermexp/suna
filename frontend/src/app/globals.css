@@ -667,3 +667,22 @@
     }
   }
   }
+
+/* Fix for duplicate copy buttons in code blocks */
+.markdown pre > button:not(:first-of-type),
+.markdown pre .copy-button:not(:first-of-type),
+.prose pre > button:not(:first-of-type),
+.prose pre .copy-button:not(:first-of-type),
+.cm-editor button[title*="copy"]:not(:first-of-type),
+.cm-editor button[aria-label*="copy"]:not(:first-of-type),
+pre > button:not(:first-of-type),
+pre .copy-button:not(:first-of-type) {
+  display: none !important;
+}
+
+/* Ensure proper positioning for the first copy button */
+.markdown pre,
+.prose pre,
+.cm-editor {
+  position: relative;
+}

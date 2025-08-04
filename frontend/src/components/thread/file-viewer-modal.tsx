@@ -137,7 +137,6 @@ export function FileViewerModal({
   // Utility state
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isCopying, setIsCopying] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // State to track if initial path has been processed
@@ -1068,21 +1067,7 @@ export function FileViewerModal({
     [selectedFilePath, isExportingPdf, isMarkdownFile],
   );
 
-  // Handle copy content
-  const handleCopyContent = useCallback(async () => {
-    if (!textContentForRenderer || isCopying) return;
-    
-    try {
-      setIsCopying(true);
-      await navigator.clipboard.writeText(textContentForRenderer);
-      toast.success('Content copied to clipboard');
-    } catch (error) {
-      console.error('Failed to copy:', error);
-      toast.error('Failed to copy content');
-    } finally {
-      setIsCopying(false);
-    }
-  }, [textContentForRenderer, isCopying]);
+  // Note: handleCopyContent is already defined above
 
   // Handle file download - streamlined for performance
   const handleDownload = async () => {
@@ -1405,24 +1390,6 @@ export function FileViewerModal({
                   )}
                   <span className="hidden sm:inline">Download</span>
                 </Button>
-                
-                {/* Copy button for text files */}
-                {textContentForRenderer && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCopyContent}
-                    disabled={isCopying}
-                    className="h-8 gap-1"
-                  >
-                    {isCopying ? (
-                      <Loader className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                    <span className="hidden sm:inline">Copy</span>
-                  </Button>
-                )}
 
                 {/* Replace the Export as PDF button with a dropdown */}
                 {isMarkdownFile(selectedFilePath) && (

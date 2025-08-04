@@ -20,8 +20,22 @@ from services.api_keys import (
 from services.supabase import DBConnection
 from utils.auth_utils import get_current_user_id_from_jwt
 from utils.logger import logger
+from flags.flags import FeatureFlagManager
 
 router = APIRouter()
+
+
+async def check_custom_agents_flag():
+    """Check if custom_agents feature flag is enabled"""
+    flag_manager = FeatureFlagManager()
+    is_enabled = await flag_manager.is_enabled("custom_agents")
+    if not is_enabled:
+        logger.warning("API Keys endpoint accessed but custom_agents flag is disabled")
+        raise HTTPException(
+            status_code=403, 
+            detail="API Keys feature is not enabled. Please enable the 'custom_agents' feature flag."
+        )
+    return True
 
 
 async def get_api_key_service() -> APIKeyService:
@@ -31,12 +45,10 @@ async def get_api_key_service() -> APIKeyService:
     return APIKeyService(db)
 
 
-async def get_account_id_from_user_id(user_id: str) -> UUID:
+async def get_account_id_from_user_id(user_id: str, api_key_service: APIKeyService) -> UUID:
     """Get account ID from user ID using basejump accounts table"""
     try:
-        db = DBConnection()
-        await db.initialize()
-        client = await db.client
+        client = await api_key_service.db.client
 
         # Query the basejump.accounts table for the user's primary account
         result = (
@@ -50,12 +62,16 @@ async def get_account_id_from_user_id(user_id: str) -> UUID:
         )
 
         if not result.data:
-            raise HTTPException(status_code=404, detail="User account not found")
+            logger.error(f"No account found for user_id: {user_id}")
+            logger.error(f"Query result: {result}")
+            raise HTTPException(status_code=404, detail="User account not found. Make sure you have a personal account in Supabase.")
 
         return UUID(result.data[0]["id"])
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error getting account ID: {e}")
-        raise HTTPException(status_code=500, detail="Failed to get user account")
+        logger.error(f"Error getting account ID for user {user_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to get user account: {str(e)}")
 
 
 @router.post("/api-keys", response_model=APIKeyCreateResponse)
@@ -63,6 +79,7 @@ async def create_api_key(
     request: APIKeyCreateRequest,
     user_id: str = Depends(get_current_user_id_from_jwt),
     api_key_service: APIKeyService = Depends(get_api_key_service),
+    _: bool = Depends(check_custom_agents_flag),
 ):
     """
     Create a new API key for the authenticated user
@@ -76,7 +93,7 @@ async def create_api_key(
         APIKeyCreateResponse: The newly created API key details including the key value
     """
     try:
-        account_id = await get_account_id_from_user_id(user_id)
+        account_id = await get_account_id_from_user_id(user_id, api_key_service)
 
         logger.info(
             "Creating API key",
@@ -107,6 +124,7 @@ async def create_api_key(
 async def list_api_keys(
     user_id: str = Depends(get_current_user_id_from_jwt),
     api_key_service: APIKeyService = Depends(get_api_key_service),
+    _: bool = Depends(check_custom_agents_flag),
 ):
     """
     List all API keys for the authenticated user
@@ -119,7 +137,7 @@ async def list_api_keys(
         List[APIKeyResponse]: List of API keys (without the actual key values)
     """
     try:
-        account_id = await get_account_id_from_user_id(user_id)
+        account_id = await get_account_id_from_user_id(user_id, api_key_service)
 
         logger.debug("Listing API keys", user_id=user_id, account_id=str(account_id))
 
@@ -156,7 +174,7 @@ async def revoke_api_key(
         dict: Success message
     """
     try:
-        account_id = await get_account_id_from_user_id(user_id)
+        account_id = await get_account_id_from_user_id(user_id, api_key_service)
 
         logger.info(
             "Revoking API key",
@@ -200,7 +218,7 @@ async def delete_api_key(
         dict: Success message
     """
     try:
-        account_id = await get_account_id_from_user_id(user_id)
+        account_id = await get_account_id_from_user_id(user_id, api_key_service)
 
         logger.info(
             "Deleting API key",
@@ -224,3 +242,54 @@ async def delete_api_key(
     except Exception as e:
         logger.error(f"Unexpected error deleting API key: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to delete API key")
+
+
+@router.get("/api-keys/debug/health")
+async def debug_api_keys_health(
+    user_id: str = Depends(get_current_user_id_from_jwt),
+):
+    """
+    Debug endpoint to check API keys system health
+    """
+    health_info = {
+        "user_id": user_id,
+        "checks": {}
+    }
+    
+    try:
+        # Check database connection
+        db = DBConnection()
+        await db.initialize()
+        client = await db.client
+        health_info["checks"]["database_connection"] = "OK"
+        
+        # Check if api_keys table exists
+        table_check = await client.table("api_keys").select("key_id").limit(1).execute()
+        health_info["checks"]["api_keys_table"] = "OK"
+        
+        # Check basejump schema
+        basejump_check = await client.schema("basejump").table("accounts").select("id").limit(1).execute()
+        health_info["checks"]["basejump_schema"] = "OK"
+        
+        # Try to get account ID
+        try:
+            api_key_service = APIKeyService(db)
+            account_id = await get_account_id_from_user_id(user_id, api_key_service)
+            health_info["checks"]["account_lookup"] = "OK"
+            health_info["account_id"] = str(account_id)
+        except Exception as e:
+            health_info["checks"]["account_lookup"] = f"FAILED: {str(e)}"
+            
+        # Check API_KEY_SECRET configuration
+        from utils.config import config
+        health_info["checks"]["api_key_secret_configured"] = (
+            "OK" if config.API_KEY_SECRET != "default-secret-key-change-in-production" 
+            else "WARNING: Using default secret"
+        )
+        
+        return health_info
+        
+    except Exception as e:
+        health_info["checks"]["error"] = str(e)
+        logger.error(f"Health check failed: {e}", exc_info=True)
+        return health_info

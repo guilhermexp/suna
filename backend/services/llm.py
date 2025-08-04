@@ -235,7 +235,7 @@ def prepare_params(
 
     if is_kimi_k2:
         params["provider"] = {
-            "order": ["together/fp8", "novita/fp8", "baseten/fp8", "moonshotai", "groq"]
+            "order": ["groq"]
         }
 
     if is_anthropic and use_thinking:

@@ -158,8 +158,8 @@ export const MCPConfigurationNew: React.FC<MCPConfigurationProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex-1 overflow-y-auto">
+    <div className="flex flex-col max-h-[650px]">
+      <div className="flex-1 overflow-y-auto pr-2">
         {configuredMCPs.length === 0 && (
           <div className="text-center py-12 px-6 bg-muted/30 rounded-xl border-2 border-dashed border-border">
             <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">

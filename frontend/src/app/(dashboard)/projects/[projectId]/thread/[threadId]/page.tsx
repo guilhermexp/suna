@@ -129,11 +129,12 @@ export default function ThreadPage({
   const workflowId = threadQuery.data?.metadata?.workflow_id;
 
   // Set initial selected agent from thread data
-  useEffect(() => {
-    if (threadAgentData?.agent && !selectedAgentId) {
-      setSelectedAgentId(threadAgentData.agent.agent_id);
-    }
-  }, [threadAgentData, selectedAgentId]);
+  // Commented out to prevent automatic agent selection
+  // useEffect(() => {
+  //   if (threadAgentData?.agent && !selectedAgentId) {
+  //     setSelectedAgentId(threadAgentData.agent.agent_id);
+  //   }
+  // }, [threadAgentData, selectedAgentId]);
 
   const { data: subscriptionData } = useSubscription();
   const subscriptionStatus: SubscriptionStatus = subscriptionData?.status === 'active'

@@ -107,7 +107,15 @@ MODELS = {
             "output_cost_per_million_tokens": 15.00
         },
         "tier_availability": ["paid"]
-    },   
+    },
+    "openrouter/z-ai/glm-4.5": {
+        "aliases": ["glm-4.5"],
+        "pricing": {
+            "input_cost_per_million_tokens": 2.00,
+            "output_cost_per_million_tokens": 8.00
+        },
+        "tier_availability": ["paid"]
+    },
 }
 
 # Derived structures (auto-generated from MODELS)

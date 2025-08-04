@@ -4,6 +4,7 @@ import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { isLocalMode } from '@/lib/config';
+import { useFeatureFlag } from '@/lib/feature-flags';
 
 export default function PersonalAccountSettingsPage({
   children,
@@ -11,10 +12,13 @@ export default function PersonalAccountSettingsPage({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { enabled: customAgentsEnabled, loading: flagLoading } = useFeatureFlag('custom_agents');
+  
   const items = [
     // { name: "Profile", href: "/settings" },
     // { name: "Teams", href: "/settings/teams" },
     { name: 'Usage Logs', href: '/settings/usage-logs' },
+    ...(!flagLoading && customAgentsEnabled ? [{ name: 'API Keys', href: '/settings/api-keys' }] : []),
     ...(isLocalMode() ? [{ name: 'Local .Env Manager', href: '/settings/env-manager' }] : []),
   ];
   return (

@@ -127,11 +127,10 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
       console.warn('Agent with ID', selectedAgentId, 'not found, falling back to Suna');
     }
     
-    const defaultAgent = allAgents[0];
-    const isDefaultAgentSuna = defaultAgent?.metadata?.is_suna_default || false;
+    // When no agent is selected (selectedAgentId is undefined), show Suna
     return {
-      name: defaultAgent?.name || 'Suna',
-      icon: isDefaultAgentSuna ? <KortixLogo size={16} /> : (defaultAgent?.icon || <KortixLogo size={16} />)
+      name: 'Suna',
+      icon: <KortixLogo size={16} />
     };
   };
 
