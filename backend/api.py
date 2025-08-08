@@ -82,6 +82,7 @@ async def lifespan(app: FastAPI):
         credentials_api.initialize(db)
         template_api.initialize(db)
         composio_api.initialize(db)
+        mcp_api.initialize(db)
         
         yield
         
