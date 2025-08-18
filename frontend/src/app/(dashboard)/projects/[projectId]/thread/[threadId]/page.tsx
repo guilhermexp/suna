@@ -15,7 +15,7 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { useAgentStream } from '@/hooks/useAgentStream';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { isLocalMode } from '@/lib/config';
+import { isLocalMode, isSelfHosted } from '@/lib/config';
 import { ThreadContent } from '@/components/thread/content/ThreadContent';
 import { ThreadSkeleton } from '@/components/thread/content/ThreadSkeleton';
 import { useAddUserMessageMutation } from '@/hooks/react-query/threads/use-messages';
@@ -535,7 +535,7 @@ export default function ThreadPage({
       hasCheckedUpgradeDialog.current = true;
       const hasSeenUpgradeDialog = localStorage.getItem('suna_upgrade_dialog_displayed');
       const isFreeTier = subscriptionStatus === 'no_subscription';
-      if (!hasSeenUpgradeDialog && isFreeTier && !isLocalMode()) {
+      if (!hasSeenUpgradeDialog && isFreeTier && !isLocalMode() && !isSelfHosted()) {
         setShowUpgradeDialog(true);
       }
     }

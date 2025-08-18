@@ -39,7 +39,7 @@ import {
 } from './_use-model-selection';
 import { PaywallDialog } from '@/components/payment/paywall-dialog';
 import { cn } from '@/lib/utils';
-import { isLocalMode } from '@/lib/config';
+import { isLocalMode, isSelfHosted } from '@/lib/config';
 import { CustomModelDialog, CustomModelFormData } from './custom-model-dialog';
 import Link from 'next/link';
 import { IntegrationsRegistry } from '@/components/agents/integrations-registry';
@@ -255,7 +255,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       setIsOpen(false);
       return;
     }
-    if (canAccessModel(id)) {
+    if (canAccessModel(id) || isLocalMode() || isSelfHosted()) {
       onModelChange(id);
       setIsOpen(false);
     } else {
@@ -265,7 +265,9 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   };
 
   const handleUpgradeClick = () => {
-    setBillingModalOpen(true);
+    if (!isLocalMode() && !isSelfHosted()) {
+      setBillingModalOpen(true);
+    }
   };
 
   const closeDialog = () => {
@@ -687,27 +689,6 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                                 </TooltipProvider>
                               ))
                             }
-                            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/95 to-transparent flex items-end justify-center">
-                              <div className="w-full p-3">
-                                <div className="rounded-xl bg-gradient-to-br from-blue-50/80 to-blue-200/70 dark:from-blue-950/40 dark:to-blue-900/30 shadow-sm border border-blue-200/50 dark:border-blue-800/50 p-3">
-                                  <div className="flex flex-col space-y-2">
-                                    <div className="flex items-center">
-                                      <Crown className="h-4 w-4 text-blue-500 mr-2 flex-shrink-0" />
-                                      <div>
-                                        <p className="text-sm font-medium">Unlock all models + higher limits</p>
-                                      </div>
-                                    </div>
-                                    <Button
-                                      size="sm"
-                                      className="w-full h-8 font-medium"
-                                      onClick={handleUpgradeClick}
-                                    >
-                                      Upgrade now
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
                           </div>
                         </div>
                       </div>

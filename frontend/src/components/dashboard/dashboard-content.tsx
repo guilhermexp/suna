@@ -15,7 +15,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useBillingError } from '@/hooks/useBillingError';
 import { BillingErrorAlert } from '@/components/billing/usage-limit-alert';
 import { useAccounts } from '@/hooks/use-accounts';
-import { config, isLocalMode, isStagingMode } from '@/lib/config';
+import { config, isLocalMode, isStagingMode, isSelfHosted } from '@/lib/config';
 import { useInitiateAgentWithInvalidation } from '@/hooks/react-query/dashboard/use-initiate-agent';
 import { ModalProviders } from '@/providers/modal-providers';
 import { useAgents } from '@/hooks/react-query/agents/use-agents';
@@ -169,7 +169,7 @@ export function DashboardContent() {
       chatInputRef.current?.clearPendingFiles();
     } catch (error: any) {
       console.error('Error during submission process:', error);
-      if (error instanceof BillingError) {
+      if (error instanceof BillingError && !isSelfHosted()) {
         onOpen("paymentRequiredDialog");
       } else if (error instanceof AgentRunLimitError) {
         const { running_thread_ids, running_count } = error.detail;
@@ -261,14 +261,16 @@ export function DashboardContent() {
           </div>
         </div>
         
-        <BillingErrorAlert
-          message={billingError?.message}
-          currentUsage={billingError?.currentUsage}
-          limit={billingError?.limit}
-          accountId={personalAccount?.account_id}
-          onDismiss={clearBillingError}
-          isOpen={!!billingError}
-        />
+        {!isSelfHosted() && (
+          <BillingErrorAlert
+            message={billingError?.message}
+            currentUsage={billingError?.currentUsage}
+            limit={billingError?.limit}
+            accountId={personalAccount?.account_id}
+            onDismiss={clearBillingError}
+            isOpen={!!billingError}
+          />
+        )}
       </div>
 
       {agentLimitData && (

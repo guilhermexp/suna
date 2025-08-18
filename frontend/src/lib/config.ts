@@ -235,6 +235,10 @@ export const isStagingMode = (): boolean => {
   return config.IS_STAGING;
 };
 
+export const isSelfHosted = (): boolean => {
+  return process.env.NEXT_PUBLIC_SELF_HOSTED === 'true';
+};
+
 
 const PROD_YEARLY_COMMITMENT_PLANS = {
   [PROD_TIERS.TIER_2_17_YEARLY_COMMITMENT.priceId]: { tier: 1, name: '2h/$17/month (yearly)' },

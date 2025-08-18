@@ -50,7 +50,7 @@ import {
 } from '@/components/ui/dialog';
 import { createClient } from '@/lib/supabase/client';
 import { useTheme } from 'next-themes';
-import { isLocalMode } from '@/lib/config';
+import { isLocalMode, isSelfHosted } from '@/lib/config';
 import { useFeatureFlag } from '@/lib/feature-flags';
 
 export function NavUserWithTeams({
@@ -285,12 +285,14 @@ export function NavUserWithTeams({
 
               {/* User Settings Section */}
               <DropdownMenuGroup>
-                <DropdownMenuItem asChild>
-                  <Link href="/settings/billing">
-                    <CreditCard className="h-4 w-4" />
-                    Billing
-                  </Link>
-                </DropdownMenuItem>
+                {!isSelfHosted() && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings/billing">
+                      <CreditCard className="h-4 w-4" />
+                      Billing
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 {!flagLoading && customAgentsEnabled && (
                   <DropdownMenuItem asChild>
                     <Link href="/settings/api-keys">

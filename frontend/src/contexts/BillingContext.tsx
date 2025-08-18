@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useCallback, useEffect, useRef } from 'react';
 import { useBillingStatusQuery } from '@/hooks/react-query/threads/use-billing-status';
 import { BillingStatusResponse } from '@/lib/api';
-import { isLocalMode } from '@/lib/config';
+import { isLocalMode, isSelfHosted } from '@/lib/config';
 
 interface BillingContextType {
   billingStatus: BillingStatusResponse | null;
@@ -21,7 +21,7 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
   const checkInProgressRef = useRef<boolean>(false);
 
   const checkBillingStatus = useCallback(async (force = false): Promise<boolean> => {
-    if (isLocalMode()) {
+    if (isLocalMode() || isSelfHosted()) {
       return false;
     }
 

@@ -155,7 +155,7 @@ export const getAgentWorkflows = async (agentId: string): Promise<AgentWorkflow[
       throw new Error('You must be logged in to get workflows');
     }
 
-    const response = await fetch(`${API_URL}/triggers/workflows/agents/${agentId}/workflows`, {
+    const response = await fetch(`${API_URL}/api/triggers/workflows/agents/${agentId}/workflows`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -189,7 +189,7 @@ export const createAgentWorkflow = async (agentId: string, workflow: CreateWorkf
       throw new Error('You must be logged in to create a workflow');
     }
 
-    const response = await fetch(`${API_URL}/triggers/workflows/agents/${agentId}/workflows`, {
+    const response = await fetch(`${API_URL}/api/triggers/workflows/agents/${agentId}/workflows`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -228,7 +228,7 @@ export const updateAgentWorkflow = async (
       throw new Error('You must be logged in to update a workflow');
     }
 
-    const response = await fetch(`${API_URL}/triggers/workflows/agents/${agentId}/workflows/${workflowId}`, {
+    const response = await fetch(`${API_URL}/api/triggers/workflows/agents/${agentId}/workflows/${workflowId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -263,7 +263,7 @@ export const deleteAgentWorkflow = async (agentId: string, workflowId: string): 
       throw new Error('You must be logged in to delete a workflow');
     }
 
-    const response = await fetch(`${API_URL}/triggers/workflows/agents/${agentId}/workflows/${workflowId}`, {
+    const response = await fetch(`${API_URL}/api/triggers/workflows/agents/${agentId}/workflows/${workflowId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -304,7 +304,7 @@ export const executeWorkflow = async (
       throw new Error('You must be logged in to execute a workflow');
     }
 
-    const response = await fetch(`${API_URL}/triggers/workflows/agents/${agentId}/workflows/${workflowId}/execute`, {
+    const response = await fetch(`${API_URL}/api/triggers/workflows/agents/${agentId}/workflows/${workflowId}/execute`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -343,7 +343,7 @@ export const getWorkflowExecutions = async (
       throw new Error('You must be logged in to get workflow executions');
     }
 
-    const response = await fetch(`${API_URL}/triggers/workflows/agents/${agentId}/workflows/${workflowId}/executions?limit=${limit}`, {
+    const response = await fetch(`${API_URL}/api/triggers/workflows/agents/${agentId}/workflows/${workflowId}/executions?limit=${limit}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

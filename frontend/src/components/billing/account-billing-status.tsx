@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { PricingSection } from '@/components/home/sections/pricing-section';
-import { isLocalMode } from '@/lib/config';
+import { isLocalMode, isSelfHosted } from '@/lib/config';
 import { createPortalSession } from '@/lib/api';
 import { useAuth } from '@/components/AuthProvider';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -48,14 +48,14 @@ export default function AccountBillingStatus({ accountId, returnUrl }: Props) {
     }
   };
 
-  // In local development mode, show a simplified component
-  if (isLocalMode()) {
+  // In local development or self-hosted mode, show a simplified component
+  if (isLocalMode() || isSelfHosted()) {
     return (
       <div className="rounded-xl border shadow-sm bg-card p-6">
-        <h2 className="text-xl font-semibold mb-4">Billing Status</h2>
+        <h2 className="text-xl font-semibold mb-4">Status</h2>
         <div className="p-4 mb-4 bg-muted/30 border border-border rounded-lg text-center">
           <p className="text-sm text-muted-foreground">
-            Running in local development mode - billing features are disabled
+            {isSelfHosted() ? 'Self-hosted mode - all features unlocked' : 'Running in local development mode - billing features are disabled'}
           </p>
           <p className="text-xs text-muted-foreground mt-2">
             Agent usage limits are not enforced in this environment

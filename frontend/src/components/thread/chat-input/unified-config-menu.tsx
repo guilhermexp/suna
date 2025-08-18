@@ -414,23 +414,6 @@ const LoggedInMenu: React.FC<UnifiedConfigMenuProps> = ({
                                                                 </TooltipProvider>
                                                             ))}
 
-                                                        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/95 to-transparent flex items-end justify-center">
-                                                            <div className="w-full p-3">
-                                                                <div className="rounded-xl bg-gradient-to-br from-blue-50/80 to-blue-200/70 dark:from-blue-950/40 dark:to-blue-900/30 shadow-sm border border-blue-200/50 dark:border-blue-800/50 p-3">
-                                                                    <div className="flex flex-col space-y-2">
-                                                                        <div className="flex items-center">
-                                                                            <Crown className="h-4 w-4 text-blue-500 mr-2 flex-shrink-0" />
-                                                                            <div>
-                                                                                <p className="text-sm font-medium">Unlock all models + higher limits</p>
-                                                                            </div>
-                                                                        </div>
-                                                                        <Button size="sm" className="w-full h-8 font-medium" onClick={handleUpgradeClick}>
-                                                                            Upgrade now
-                                                                        </Button>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

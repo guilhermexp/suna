@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { PricingSection } from '@/components/home/sections/pricing-section';
-import { isLocalMode } from '@/lib/config';
+import { isLocalMode, isSelfHosted } from '@/lib/config';
 import {
     getSubscription,
     createPortalSession,
@@ -65,8 +65,8 @@ export function BillingModal({ open, onOpenChange, returnUrl = typeof window !==
         }
     };
 
-    // Local mode content
-    if (isLocalMode()) {
+    // Local mode or self-hosted content
+    if (isLocalMode() || isSelfHosted()) {
         return (
             <Dialog open={open} onOpenChange={onOpenChange}>
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -75,7 +75,7 @@ export function BillingModal({ open, onOpenChange, returnUrl = typeof window !==
                     </DialogHeader>
                     <div className="p-4 bg-muted/30 border border-border rounded-lg text-center">
                         <p className="text-sm text-muted-foreground">
-                            Running in local development mode - billing features are disabled
+                            Running in {isLocalMode() ? 'local development' : 'self-hosted'} mode - billing features are disabled
                         </p>
                         <p className="text-xs text-muted-foreground mt-2">
                             All premium features are available in this environment
