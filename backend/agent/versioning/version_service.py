@@ -205,9 +205,9 @@ class VersionService:
         logger.info(f"Creating version for agent {agent_id}")
         client = await self.db.client
         
-        has_access = await has_edit_access_to_agent(agent_id, user_id)
-        if not has_access:
-            raise Exception("Unauthorized to create version for this agent")
+        is_owner, _ = await self._verify_agent_access(agent_id, user_id)
+        if not is_owner:
+            raise UnauthorizedError("Unauthorized to create version for this agent")
         
         current_result = await client.table('agents').select('current_version_id, version_count').eq('agent_id', agent_id).single().execute()
         
@@ -215,13 +215,32 @@ class VersionService:
             raise Exception("Agent not found")
         
         previous_version_id = current_result.data.get('current_version_id')
-        version_number = (current_result.data.get('version_count') or 0) + 1
+        
+        max_version_result = await client.table('agent_versions').select('version_number').eq('agent_id', agent_id).order('version_number', desc=True).limit(1).execute()
+        max_version_number = 0
+        if max_version_result.data and max_version_result.data[0].get('version_number'):
+            max_version_number = max_version_result.data[0]['version_number']
+        version_number = max_version_number + 1
         
         if not version_name:
             version_name = f"v{version_number}"
         
         workflows_result = await client.table('agent_workflows').select('*').eq('agent_id', agent_id).execute()
         workflows = workflows_result.data if workflows_result.data else []
+        
+        triggers_result = await client.table('agent_triggers').select('*').eq('agent_id', agent_id).execute()
+        triggers = []
+        if triggers_result.data:
+            import json
+            for trigger in triggers_result.data:
+                trigger_copy = trigger.copy()
+                if 'config' in trigger_copy and isinstance(trigger_copy['config'], str):
+                    try:
+                        trigger_copy['config'] = json.loads(trigger_copy['config'])
+                    except json.JSONDecodeError:
+                        logger.warning(f"Failed to parse trigger config for {trigger_copy.get('trigger_id')}")
+                        trigger_copy['config'] = {}
+                triggers.append(trigger_copy)
         
         normalized_custom_mcps = self._normalize_custom_mcps(custom_mcps)
         
@@ -262,7 +281,8 @@ class VersionService:
                     'mcp': version.configured_mcps,
                     'custom_mcp': normalized_custom_mcps
                 },
-                'workflows': workflows
+                'workflows': workflows,
+                'triggers': triggers
             }
         }
         

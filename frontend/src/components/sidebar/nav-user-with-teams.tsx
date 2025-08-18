@@ -19,6 +19,7 @@ import {
   Sun,
   Moon,
   KeyRound,
+  Plug,
 } from 'lucide-react';
 import { useAccounts } from '@/hooks/use-accounts';
 import NewTeamForm from '@/components/basejump/new-team-form';
@@ -290,6 +291,14 @@ export function NavUserWithTeams({
                     <Link href="/settings/billing">
                       <CreditCard className="h-4 w-4" />
                       Billing
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {!flagLoading && customAgentsEnabled && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings/credentials">
+                      <Plug className="h-4 w-4" />
+                      Integrations
                     </Link>
                   </DropdownMenuItem>
                 )}

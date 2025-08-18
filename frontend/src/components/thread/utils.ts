@@ -318,12 +318,16 @@ const TOOL_DISPLAY_NAMES = new Map([
   
   ['deploy', 'Deploying'],
   ['ask', 'Ask'],
+  ['create-tasks', 'Creating Tasks'],
+  ['update-tasks', 'Updating Tasks'],
   ['complete', 'Completing Task'],
   ['crawl-webpage', 'Crawling Website'],
   ['expose-port', 'Exposing Port'],
   ['scrape-webpage', 'Scraping Website'],
   ['web-search', 'Searching Web'],
   ['see-image', 'Viewing Image'],
+  ['create-presentation-outline', 'Creating Presentation Outline'],
+  ['create-presentation', 'Creating Presentation'],
 
   ['create-sheet', 'Creating Sheet'],
   ['update-sheet', 'Updating Sheet'],
@@ -341,6 +345,8 @@ const TOOL_DISPLAY_NAMES = new Map([
   ['get-popular-mcp-servers', 'Getting Popular MCP Servers'],
   ['test-mcp-server-connection', 'Testing MCP Server Connection'],
 
+  ['get-project-structure', 'Getting Project Structure'],
+  ['build-project', 'Building Project'],
 
   //V2
 

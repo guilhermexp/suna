@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse
 import asyncio
 import json
 import traceback
+import base64
 from datetime import datetime, timezone
 import uuid
 from typing import Optional, List, Dict, Any
@@ -33,6 +34,7 @@ from .versioning.api import router as version_router, initialize as initialize_v
 async def _get_version_service():
     return await get_version_service()
 from utils.suna_default_agent_service import SunaDefaultAgentService
+from .tools.sb_presentation_tool_v2 import SandboxPresentationToolV2
 
 router = APIRouter()
 router.include_router(version_router)
@@ -46,7 +48,7 @@ REDIS_RESPONSE_LIST_TTL = 3600 * 24
 
 
 class AgentStartRequest(BaseModel):
-    model_name: Optional[str] = None  # Will be set from config.MODEL_TO_USE in the endpoint
+    model_name: Optional[str] = None  # Will be set to default model in the endpoint
     enable_thinking: Optional[bool] = False
     reasoning_effort: Optional[str] = 'low'
     stream: Optional[bool] = True
@@ -322,9 +324,9 @@ async def start_agent(
     model_name = body.model_name
     logger.info(f"Original model_name from request: {model_name}")
 
-    if model_name is None:
-        model_name = config.MODEL_TO_USE
-        logger.info(f"Using model from config: {model_name}")
+    # if model_name is None:
+    #     model_name = "openrouter/moonshotai/kimi-k2"
+    #     logger.info(f"Using default model: {model_name}")
 
     # Log the model name after alias resolution
     resolved_model = MODEL_NAME_ALIASES.get(model_name, model_name)
@@ -962,7 +964,7 @@ async def generate_and_update_project_name(project_id: str, prompt: str):
 @router.post("/agent/initiate", response_model=InitiateAgentResponse)
 async def initiate_agent_with_files(
     prompt: str = Form(...),
-    model_name: Optional[str] = Form(None),  # Default to None to use config.MODEL_TO_USE
+    model_name: Optional[str] = Form(None),  # Default to None to use default model
     enable_thinking: Optional[bool] = Form(False),
     reasoning_effort: Optional[str] = Form("low"),
     stream: Optional[bool] = Form(True),
@@ -986,8 +988,8 @@ async def initiate_agent_with_files(
     logger.info(f"Original model_name from request: {model_name}")
 
     if model_name is None:
-        model_name = config.MODEL_TO_USE
-        logger.info(f"Using model from config: {model_name}")
+        model_name = "openrouter/moonshotai/kimi-k2"
+        logger.info(f"Using default model: {model_name}")
 
     # Log the model name after alias resolution
     resolved_model = MODEL_NAME_ALIASES.get(model_name, model_name)
@@ -2150,6 +2152,22 @@ async def update_agent(
                 workflows_result = await client.table('agent_workflows').select('*').eq('agent_id', agent_id).execute()
                 workflows = workflows_result.data if workflows_result.data else []
                 
+                # Fetch triggers for the agent
+                triggers_result = await client.table('agent_triggers').select('*').eq('agent_id', agent_id).execute()
+                triggers = []
+                if triggers_result.data:
+                    import json
+                    for trigger in triggers_result.data:
+                        # Parse the config string if it's a string
+                        trigger_copy = trigger.copy()
+                        if 'config' in trigger_copy and isinstance(trigger_copy['config'], str):
+                            try:
+                                trigger_copy['config'] = json.loads(trigger_copy['config'])
+                            except json.JSONDecodeError:
+                                logger.warning(f"Failed to parse trigger config for {trigger_copy.get('trigger_id')}")
+                                trigger_copy['config'] = {}
+                        triggers.append(trigger_copy)
+                
                 initial_version_data = {
                     "agent_id": agent_id,
                     "version_number": 1,
@@ -2169,7 +2187,8 @@ async def update_agent(
                     custom_mcps=initial_version_data["custom_mcps"],
                     avatar=None,
                     avatar_color=None,
-                    workflows=workflows
+                    workflows=workflows,
+                    triggers=triggers
                 )
                 initial_version_data["config"] = initial_config
                 
@@ -2419,6 +2438,30 @@ async def delete_agent(agent_id: str, user_id: str = Depends(get_current_user_id
         
         if agent.get('metadata', {}).get('is_suna_default', False):
             raise HTTPException(status_code=400, detail="Cannot delete Suna default agent")
+        
+        # Clean up triggers before deleting agent to ensure proper remote cleanup
+        try:
+            from triggers.trigger_service import get_trigger_service
+            trigger_service = get_trigger_service(db)
+            
+            # Get all triggers for this agent
+            triggers_result = await client.table('agent_triggers').select('trigger_id').eq('agent_id', agent_id).execute()
+            
+            if triggers_result.data:
+                logger.info(f"Cleaning up {len(triggers_result.data)} triggers for agent {agent_id}")
+                
+                # Delete each trigger properly (this handles remote cleanup)
+                for trigger_record in triggers_result.data:
+                    trigger_id = trigger_record['trigger_id']
+                    try:
+                        await trigger_service.delete_trigger(trigger_id)
+                        logger.info(f"Successfully cleaned up trigger {trigger_id}")
+                    except Exception as e:
+                        logger.warning(f"Failed to clean up trigger {trigger_id}: {str(e)}")
+                        # Continue with other triggers even if one fails
+        except Exception as e:
+            logger.warning(f"Failed to clean up triggers for agent {agent_id}: {str(e)}")
+            # Continue with agent deletion even if trigger cleanup fails
         
         delete_result = await client.table('agents').delete().eq('agent_id', agent_id).execute()
         
@@ -3483,12 +3526,105 @@ async def update_agent_custom_mcps(
         logger.error(f"Error updating agent custom MCPs: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+@router.post("/tools/export-presentation")
+async def export_presentation(
+    request: Dict[str, Any] = Body(...),
+    user_id: str = Depends(get_current_user_id_from_jwt)
+):
+    try:
+        presentation_name = request.get("presentation_name")
+        export_format = request.get("format", "pptx")
+        project_id = request.get("project_id")
+        
+        if not presentation_name:
+            raise HTTPException(status_code=400, detail="presentation_name is required")
+        
+        if not project_id:
+            raise HTTPException(status_code=400, detail="project_id is required")
+        
+        if db is None:
+            db_conn = DBConnection()
+            client = await db_conn.client
+        else:
+            client = await db.client
+            
+        project_result = await client.table('projects').select('sandbox').eq('project_id', project_id).execute()
+        if not project_result.data:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        sandbox_data = project_result.data[0].get('sandbox', {})
+        sandbox_id = sandbox_data.get('id')
+        
+        if not sandbox_id:
+            raise HTTPException(status_code=400, detail="No sandbox found for this project")
+        
+        thread_manager = ThreadManager()
+        
+        presentation_tool = SandboxPresentationToolV2(
+            project_id=project_id,
+            thread_manager=thread_manager
+        )
+        
+        result = await presentation_tool.export_presentation(
+            presentation_name=presentation_name,
+            format=export_format
+        )
+        
+        if result.success:
+            import json
+            import urllib.parse
+            data = json.loads(result.output)
+            
+            export_file = data.get("export_file")
+            logger.info(f"Export file from tool: {export_file}")
+            logger.info(f"Sandbox ID: {sandbox_id}")
+            
+            if export_file:
+                from fastapi.responses import Response
+                from sandbox.api import get_sandbox_by_id_safely, verify_sandbox_access
+                
+                try:
+                    file_path = export_file.replace("/workspace/", "").lstrip("/")
+                    full_path = f"/workspace/{file_path}"
+                    
+                    sandbox = await get_sandbox_by_id_safely(client, sandbox_id)
+                    file_content = await sandbox.fs.download_file(full_path)
+                    
+                    return {
+                        "success": True,
+                        "message": data.get("message"),
+                        "file_content": base64.b64encode(file_content).decode('utf-8'),
+                        "filename": export_file.split('/')[-1],
+                        "export_file": data.get("export_file"),
+                        "format": data.get("format"),
+                        "file_size": data.get("file_size")
+                    }
+                except Exception as e:
+                    logger.error(f"Failed to read exported file: {str(e)}")
+                    return {
+                        "success": False,
+                        "error": f"Failed to read exported file: {str(e)}"
+                    }
+            else:
+                return {
+                    "success": True,
+                    "message": data.get("message"),
+                    "download_url": data.get("download_url"),
+                    "export_file": data.get("export_file"),
+                    "format": data.get("format"),
+                    "file_size": data.get("file_size")
+                }
+        else:
+            raise HTTPException(status_code=400, detail=result.output or "Export failed")
+            
+    except Exception as e:
+        logger.error(f"Export presentation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to export presentation: {str(e)}")
 @router.post("/agents/profile-image/upload")
 async def upload_agent_profile_image(
     file: UploadFile = File(...),
     user_id: str = Depends(get_current_user_id_from_jwt)
 ):
-    """Upload a profile image to Supabase storage and return its public URL."""
     try:
         content_type = file.content_type or "image/png"
         image_bytes = await file.read()
