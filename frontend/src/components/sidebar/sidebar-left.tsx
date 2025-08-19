@@ -2,12 +2,11 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Bot, Menu, Store, Plus, Zap, ChevronRight, Loader2 } from 'lucide-react';
+import { Bot, Menu, Store, Plus, Zap, ChevronRight, Loader2, FileText } from 'lucide-react';
 
 import { NavAgents } from '@/components/sidebar/nav-agents';
 import { NavUserWithTeams } from '@/components/sidebar/nav-user-with-teams';
 import { KortixLogo } from '@/components/sidebar/kortix-logo';
-import { CTACard } from '@/components/sidebar/cta';
 import { isSelfHosted } from '@/lib/config';
 import {
   Sidebar,
@@ -43,6 +42,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useFeatureFlags } from '@/lib/feature-flags';
+import { useNotesCount } from '@/hooks/useNotesCount';
 import posthog from 'posthog-js';
 // Floating mobile menu button component
 function FloatingMobileMenuButton() {
@@ -93,6 +93,8 @@ export function SidebarLeft({
   const customAgentsEnabled = flags.custom_agents;
   const marketplaceEnabled = flags.agent_marketplace;
   const [showNewAgentDialog, setShowNewAgentDialog] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const { count: notesCount } = useNotesCount(userId);
 
   // Close mobile menu on page navigation
   useEffect(() => {
@@ -116,6 +118,7 @@ export function SidebarLeft({
           email: data.user.email || '',
           avatar: data.user.user_metadata?.avatar_url || '',
         });
+        setUserId(data.user.id);
       }
     };
 
@@ -187,6 +190,26 @@ export function SidebarLeft({
               </span>
             </SidebarMenuButton>
           </Link>
+          <Link href="/notes">
+            <SidebarMenuButton 
+              className={cn('touch-manipulation', {
+                'bg-accent text-accent-foreground font-medium': pathname === '/notes',
+              })} 
+              onClick={() => {
+                if (isMobile) setOpenMobile(false);
+              }}
+            >
+              <FileText className="h-4 w-4 mr-1" />
+              <span className="flex items-center justify-between w-full">
+                Notas
+                {notesCount > 0 && (
+                  <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-primary rounded-full">
+                    {notesCount}
+                  </span>
+                )}
+              </span>
+            </SidebarMenuButton>
+          </Link>
           {!flagsLoading && customAgentsEnabled && (
             <SidebarMenu>
               <Collapsible
@@ -249,11 +272,6 @@ export function SidebarLeft({
         </SidebarGroup>
         <NavAgents />
       </SidebarContent>
-      {state !== 'collapsed' && !isSelfHosted() && (
-        <div className="px-3 py-2">
-          <CTACard />
-        </div>
-      )}
       <SidebarFooter>
         {state === 'collapsed' && (
           <div className="mt-2 flex justify-center">

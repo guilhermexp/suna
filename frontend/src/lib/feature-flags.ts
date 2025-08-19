@@ -21,6 +21,20 @@ const CACHE_DURATION = 5 * 60 * 1000;
 
 let globalFlagsCache: { flags: Record<string, boolean>; timestamp: number } | null = null;
 
+// Default flags - todas ativadas por padrão
+const DEFAULT_FLAGS: Record<string, boolean> = {
+  'custom_agents': true,
+  'notes': true,
+  'chat': true,
+  'collaboration': true,
+  'file_upload': true,
+  'real_time': true,
+  'notifications': true,
+  'analytics': true,
+  'billing': true,
+  'admin': true,
+};
+
 export class FeatureFlagManager {
   private static instance: FeatureFlagManager;
   
@@ -39,15 +53,18 @@ export class FeatureFlagManager {
       if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
         return cached.value;
       }
+      
       const response = await fetch(`${API_URL}/api/feature-flags/${flagName}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
       });
+      
       if (!response.ok) {
         console.warn(`Failed to fetch feature flag ${flagName}: ${response.status}`);
-        return false;
+        // Retorna valor padrão se backend não disponível
+        return DEFAULT_FLAGS[flagName] ?? true;
       }
       
       const data: FeatureFlag = await response.json();
@@ -60,7 +77,8 @@ export class FeatureFlagManager {
       return data.enabled;
     } catch (error) {
       console.error(`Error checking feature flag ${flagName}:`, error);
-      return false;
+      // Retorna valor padrão se erro de rede/CORS
+      return DEFAULT_FLAGS[flagName] ?? true;
     }
   }
   
@@ -101,7 +119,8 @@ export class FeatureFlagManager {
       
       if (!response.ok) {
         console.warn(`Failed to fetch all feature flags: ${response.status}`);
-        return {};
+        // Retorna flags padrão se backend não disponível
+        return DEFAULT_FLAGS;
       }
       
       const data: FeatureFlagsResponse = await response.json();
@@ -120,7 +139,8 @@ export class FeatureFlagManager {
       return data.flags;
     } catch (error) {
       console.error('Error fetching all feature flags:', error);
-      return {};
+      // Retorna flags padrão se erro de rede/CORS
+      return DEFAULT_FLAGS;
     }
   }
 
@@ -135,6 +155,33 @@ export class FeatureFlagManager {
       await Promise.all(promises);
     } catch (error) {
       console.error('Error preloading feature flags:', error);
+    }
+  }
+
+  // Inicializa todas as flags padrão no cache
+  initializeDefaultFlags(): void {
+    Object.entries(DEFAULT_FLAGS).forEach(([flagName, enabled]) => {
+      if (!flagCache.has(flagName)) {
+        flagCache.set(flagName, {
+          value: enabled,
+          timestamp: Date.now(),
+        });
+      }
+    });
+  }
+
+  // Pré-carrega todas as flags conhecidas
+  async initializeAllFlags(): Promise<void> {
+    try {
+      // Primeiro inicializa com valores padrão
+      this.initializeDefaultFlags();
+      
+      // Depois tenta buscar do backend (sem bloquear)
+      this.getAllFlags().catch(error => {
+        console.warn('Failed to fetch flags from backend, using defaults:', error);
+      });
+    } catch (error) {
+      console.error('Error initializing feature flags:', error);
     }
   }
 }
@@ -163,6 +210,23 @@ export const preloadFlags = (flagNames: string[]): Promise<void> => {
   return featureFlagManager.preloadFlags(flagNames);
 };
 
+export const initializeDefaultFlags = (): void => {
+  featureFlagManager.initializeDefaultFlags();
+};
+
+export const initializeAllFlags = (): Promise<void> => {
+  return featureFlagManager.initializeAllFlags();
+};
+
+// Auto-inicializa as flags quando o módulo é carregado
+if (typeof window !== 'undefined') {
+  // Inicializa imediatamente com valores padrão
+  featureFlagManager.initializeDefaultFlags();
+  
+  // Tenta buscar do backend em background
+  featureFlagManager.initializeAllFlags();
+}
+
 // React Query key factories
 export const featureFlagKeys = {
   all: ['feature-flags'] as const,
@@ -173,19 +237,25 @@ export const featureFlagKeys = {
 
 // Query functions
 const fetchFeatureFlag = async (flagName: string): Promise<boolean> => {
-  const response = await fetch(`${API_URL}/api/feature-flags/${flagName}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch feature flag ${flagName}: ${response.status}`);
+  try {
+    const response = await fetch(`${API_URL}/api/feature-flags/${flagName}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      console.warn(`Failed to fetch feature flag ${flagName}: ${response.status}`);
+      return DEFAULT_FLAGS[flagName] ?? true;
+    }
+    
+    const data: FeatureFlag = await response.json();
+    return data.enabled;
+  } catch (error) {
+    console.error(`Error fetching feature flag ${flagName}:`, error);
+    return DEFAULT_FLAGS[flagName] ?? true;
   }
-  
-  const data: FeatureFlag = await response.json();
-  return data.enabled;
 };
 
 const fetchFeatureFlagDetails = async (flagName: string): Promise<FeatureFlag> => {
@@ -205,19 +275,25 @@ const fetchFeatureFlagDetails = async (flagName: string): Promise<FeatureFlag> =
 };
 
 const fetchAllFeatureFlags = async (): Promise<Record<string, boolean>> => {
-  const response = await fetch(`${API_URL}/api/feature-flags`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch all feature flags: ${response.status}`);
+  try {
+    const response = await fetch(`${API_URL}/api/feature-flags`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      console.warn(`Failed to fetch all feature flags: ${response.status}`);
+      return DEFAULT_FLAGS;
+    }
+    
+    const data: FeatureFlagsResponse = await response.json();
+    return data.flags;
+  } catch (error) {
+    console.error('Error fetching all feature flags:', error);
+    return DEFAULT_FLAGS;
   }
-  
-  const data: FeatureFlagsResponse = await response.json();
-  return data.flags;
 };
 
 // React Query Hooks
@@ -248,7 +324,7 @@ export const useFeatureFlag = (flagName: string, options?: {
 
   // Return backward-compatible interface
   return {
-    enabled: query.data ?? false,
+    enabled: query.data ?? (DEFAULT_FLAGS[flagName] ?? true),
     loading: query.isLoading,
     // Also expose React Query properties for advanced usage
     ...query,
@@ -321,7 +397,7 @@ export const useFeatureFlags = (flagNames: string[], options?: {
     const result: Record<string, boolean> = {};
     flagNames.forEach((flagName, index) => {
       const query = queries[index];
-      result[flagName] = query.data ?? false;
+      result[flagName] = query.data ?? (DEFAULT_FLAGS[flagName] ?? true);
     });
     return result;
   }, [queries, flagNames]);

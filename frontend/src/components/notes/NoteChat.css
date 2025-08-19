@@ -1,0 +1,32 @@
+/* Placeholder styles for contenteditable */
+[contentEditable="true"]:empty::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+  position: absolute;
+}
+
+/* Hide scrollbar */
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+/* Dark mode color for gray-850 */
+.dark .dark\:bg-gray-850 {
+  background-color: rgb(24 24 27);
+}
+
+/* TipTap/ProseMirror styles */
+.tiptap.ProseMirror {
+  outline: none;
+  min-height: 24px;
+}
+
+.tiptap.ProseMirror:focus {
+  outline: none;
+}
