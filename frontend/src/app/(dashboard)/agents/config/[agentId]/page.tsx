@@ -137,7 +137,7 @@ export default function AgentConfigurationPage() {
         createVersionMutation.mutateAsync({
           agentId,
           data: {
-            system_prompt: isSunaAgent ? '' : formData.system_prompt,
+            system_prompt: isSunaAgent ? (formData.system_prompt || 'You are a helpful AI assistant.') : formData.system_prompt,
             model: formData.model,  // Include model in save
             configured_mcps: formData.configured_mcps,
             custom_mcps: normalizedCustomMcps,

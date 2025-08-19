@@ -45,7 +45,7 @@ const nextConfig = (): NextConfig => ({
     },
     
     // Type-safe environment variables
-    typedRoutes: true,
+    // typedRoutes: true, // Commented out for Turbopack compatibility
     
     // Web Vitals attribution
     webVitalsAttribution: ['CLS', 'LCP', 'FCP', 'FID', 'TTFB'],
