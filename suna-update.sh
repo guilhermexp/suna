@@ -101,7 +101,8 @@ echo ""
 echo -e "${YELLOW}📦 Clearing npm/yarn cache...${NC}"
 if [ -d "frontend" ]; then
     cd frontend
-    rm -rf node_modules package-lock.json yarn.lock .next 2>/dev/null
+    rm -rf node_modules .next 2>/dev/null
+    # Don't remove package-lock.json - it's needed for Docker build
     npm cache clean --force 2>/dev/null
     yarn cache clean 2>/dev/null || true
     cd ..
