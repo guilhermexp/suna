@@ -20,6 +20,7 @@ from pydantic import BaseModel
 import uuid
 
 from agent import api as agent_api
+from agent.config_helper import initialize_tool_db_connection
 
 from sandbox import api as sandbox_api
 from services import billing as billing_api
@@ -52,6 +53,7 @@ async def lifespan(app: FastAPI):
             db,
             instance_id
         )
+        initialize_tool_db_connection(db)
         
         
         sandbox_api.initialize(db)

@@ -12,6 +12,8 @@ export interface ErrorContext {
   operation?: string;
   resource?: string;
   silent?: boolean;
+  action?: string;
+  location?: string;
 }
 
 const getStatusMessage = (status: number): string => {

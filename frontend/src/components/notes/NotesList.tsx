@@ -221,7 +221,7 @@ export function NotesList({
   return (
     <div className={cn("flex flex-col h-full relative", className)}>
       {/* Header - ALWAYS SHOWN */}
-      <div className="p-6 border-b border-border/40">
+      <div className="px-6 py-4 border-b border-border/40">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-semibold">Notes</h1>
         </div>
@@ -467,20 +467,20 @@ export function NotesList({
                           </div>
                         </div>
                       </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
+                      <CardContent className="p-3 sm:p-4 pt-0">
+                        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-3 mb-2 sm:mb-3">
                           {formatContent(note.content, note.content_text)}
                         </p>
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 text-xs text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {formatDistanceToNow(new Date(note.updated_at), { addSuffix: true })}
+                            <span className="truncate">{formatDistanceToNow(new Date(note.updated_at), { addSuffix: true })}</span>
                           </div>
                           {note.word_count > 0 && (
                             <div className="flex items-center gap-1">
                               <span>{note.word_count} words</span>
                               {note.reading_time > 0 && (
-                                <span>• {note.reading_time} min read</span>
+                                <span className="hidden sm:inline">• {note.reading_time} min</span>
                               )}
                             </div>
                           )}
@@ -500,10 +500,10 @@ export function NotesList({
         onClick={handleCreateNote}
         disabled={isCreating}
         size="icon"
-        className="fixed bottom-6 right-6 h-10 w-10 rounded-full shadow-lg transition-all hover:scale-105 z-50"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg transition-all hover:scale-105 z-40"
         variant="default"
       >
-        <Plus className="h-4 w-4" />
+        <Plus className="h-5 w-5 sm:h-6 sm:w-6" />
       </Button>
     </div>
   );

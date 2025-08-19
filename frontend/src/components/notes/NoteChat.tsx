@@ -115,12 +115,7 @@ export function NoteChat({
 
     setIsSending(true);
     try {
-      const result = await sendNoteMessage(supabase, {
-        note_id: noteId,
-        user_id: userId,
-        content: message.trim(),
-        message_type: 'text'
-      });
+      const result = await sendNoteMessage(supabase, noteId, message.trim(), 'text');
 
       if (result) {
         setMessage('');

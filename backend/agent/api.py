@@ -575,6 +575,144 @@ async def get_agent_run(agent_run_id: str, user_id: str = Depends(get_current_us
         "error": agent_run_data['error']
     }
 
+class AgentToolRunRequest(BaseModel):
+    tool_name: str
+    tool_args: Dict[str, Any]
+    agent_id: Optional[str] = None # Optional: if not provided, use thread's current agent
+
+class AgentToolRunResponse(BaseModel):
+    output: str
+    success: bool
+
+@router.post("/thread/{thread_id}/agent/run-tool", response_model=AgentToolRunResponse)
+async def run_agent_tool(
+    thread_id: str,
+    request_data: AgentToolRunRequest,
+    user_id: str = Depends(get_current_user_id_from_jwt)
+):
+    """
+    Runs a specific AgentPress tool for a given thread.
+    """
+    structlog.contextvars.bind_contextvars(
+        thread_id=thread_id,
+        tool_name=request_data.tool_name,
+    )
+    logger.info(f"Received request to run tool {request_data.tool_name} for thread {thread_id}")
+    client = await db.client
+
+    # 1. Verify thread access
+    await verify_thread_access(client, thread_id, user_id)
+
+    # 2. Determine which agent to use
+    agent_config = None
+    if request_data.agent_id:
+        # Use provided agent_id
+        agent_result = await client.table('agents').select('*').eq('agent_id', request_data.agent_id).eq('account_id', user_id).execute()
+        if not agent_result.data:
+            raise HTTPException(status_code=404, detail="Agent not found or access denied")
+        agent_data = agent_result.data[0]
+        
+        version_data = None
+        if agent_data.get('current_version_id'):
+            try:
+                version_service = await _get_version_service()
+                version_obj = await version_service.get_version(
+                    agent_id=agent_data['agent_id'],
+                    version_id=agent_data['current_version_id'],
+                    user_id=user_id
+                )
+                version_data = version_obj.to_dict()
+            except Exception as e:
+                logger.warning(f"Failed to get version data for agent {agent_data['agent_id']}: {e}")
+        
+        agent_config = extract_agent_config(agent_data, version_data)
+        logger.info(f"Using specified agent {agent_config['name']} ({agent_config['agent_id']})")
+    else:
+        # Try to get the most recently used agent for the thread
+        recent_agent_result = await client.table('agent_runs').select('agent_id', 'agent_version_id').eq('thread_id', thread_id).not_.is_('agent_id', 'null').order('created_at', desc=True).limit(1).execute()
+        if recent_agent_result.data:
+            effective_agent_id = recent_agent_result.data[0]['agent_id']
+            agent_result = await client.table('agents').select('*').eq('agent_id', effective_agent_id).eq('account_id', user_id).execute()
+            if agent_result.data:
+                agent_data = agent_result.data[0]
+                version_data = None
+                if agent_data.get('current_version_id'):
+                    try:
+                        version_service = await _get_version_service()
+                        version_obj = await version_service.get_version(
+                            agent_id=agent_data['agent_id'],
+                            version_id=agent_data['current_version_id'],
+                            user_id=user_id
+                        )
+                        version_data = version_obj.to_dict()
+                    except Exception as e:
+                        logger.warning(f"Failed to get version data for agent {agent_data['agent_id']}: {e}")
+                agent_config = extract_agent_config(agent_data, version_data)
+                logger.info(f"Using most recent agent {agent_config['name']} ({agent_config['agent_id']})")
+            else:
+                logger.warning(f"Recent agent {effective_agent_id} not found, falling back to default.")
+        
+        if not agent_config:
+            # Fallback to default agent if no specific or recent agent found
+            default_agent_result = await client.table('agents').select('*').eq('account_id', user_id).eq('is_default', True).execute()
+            if default_agent_result.data:
+                agent_data = default_agent_result.data[0]
+                version_data = None
+                if agent_data.get('current_version_id'):
+                    try:
+                        version_service = await _get_version_service()
+                        version_obj = await version_service.get_version(
+                            agent_id=agent_data['agent_id'],
+                            version_id=agent_data['current_version_id'],
+                            user_id=user_id
+                        )
+                        version_data = version_obj.to_dict()
+                    except Exception as e:
+                        logger.warning(f"Failed to get version data for default agent {agent_data['agent_id']}: {e}")
+                agent_config = extract_agent_config(agent_data, version_data)
+                logger.info(f"Using default agent {agent_config['name']} ({agent_config['agent_id']})")
+            else:
+                raise HTTPException(status_code=404, detail="No agent found for this thread or account")
+
+    if not agent_config:
+        raise HTTPException(status_code=500, detail="Could not load agent configuration")
+
+    # 3. Get the tool instance
+    agentpress_tools = agent_config.get('agentpress_tools', {})
+    
+    # agentpress_tools is already a dict of instantiated tools from config_helper
+    tool_instance = agentpress_tools.get(request_data.tool_name.split('.')[0]) # Get the tool class instance
+
+    if not tool_instance:
+        raise HTTPException(status_code=404, detail=f"Tool '{request_data.tool_name}' not found or not enabled for this agent.")
+
+    # 4. Call the tool method
+    try:
+        # The tool_name from frontend is expected to be 'tool_class_name.method_name'
+        # e.g., 'text_enhancement_tool.summarize_text'
+        parts = request_data.tool_name.split('.')
+        if len(parts) != 2:
+            raise HTTPException(status_code=400, detail="Invalid tool_name format. Expected 'tool_class_name.method_name'.")
+        
+        tool_class_name, method_name = parts
+        
+        # Ensure the tool_instance is indeed an instance of the expected class
+        # This check is more robust if we pass the tool_class_name from frontend
+        # For now, we assume tool_instance is the correct object
+        
+        tool_method = getattr(tool_instance, method_name, None)
+        if not tool_method or not callable(tool_method):
+            raise HTTPException(status_code=404, detail=f"Method '{method_name}' not found in tool '{tool_class_name}'.")
+
+        # Call the tool method with provided arguments
+        tool_result = await tool_method(**request_data.tool_args)
+        
+        return AgentToolRunResponse(output=tool_result.output, success=tool_result.success)
+
+    except Exception as e:
+        logger.error(f"Error running tool {request_data.tool_name}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to run tool: {str(e)}")
+
 @router.get("/thread/{thread_id}/agent", response_model=ThreadAgentResponse)
 async def get_thread_agent(thread_id: str, user_id: str = Depends(get_current_user_id_from_jwt)):
     """Get the agent details for a specific thread. Since threads are fully agent-agnostic, 

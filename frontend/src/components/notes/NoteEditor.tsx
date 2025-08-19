@@ -41,6 +41,8 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { useSingleNote, type Note } from '@/hooks/useNotes';
 import { toast } from 'sonner';
 import { type FileAttachment, getNoteAttachments } from '@/lib/supabase/storage';
+import { uploadAudioForTranscription } from '@/lib/api/transcription';
+import { runAgentTool } from '@/lib/api/agent_tools';
 
 // TipTap editor imports
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
@@ -64,6 +66,9 @@ import { TiptapCollaboration } from './TiptapCollaboration';
 
 // Toolbar component
 import { EditorToolbar } from './EditorToolbar';
+
+// YouTube Preview Handler
+import { YouTubePreviewHandler } from './YouTubePreviewHandler';
 
 // Chat component
 import { NoteChat } from './NoteChat';
@@ -402,25 +407,146 @@ export function NoteEditor({
   };
 
   // Audio handlers
-  const handleRecord = () => {
-    // TODO: Implement voice recording
-    toast.info('Voice recording coming soon!');
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  const handleRecord = async () => {
+    if (isRecording) {
+      mediaRecorderRef.current?.stop();
+      setIsRecording(false);
+      toast.info('Recording stopped.');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioFile = new File([audioBlob], `recording-${Date.now()}.webm`, { type: 'audio/webm' });
+        console.log('Recorded audio file:', audioFile);
+        toast.success('Audio recorded successfully! Transcribing...');
+        // Stop all tracks to release microphone
+        stream.getTracks().forEach(track => track.stop());
+
+        const transcriptionResult = await uploadAudioForTranscription(audioFile);
+        if (transcriptionResult?.text) {
+          editor?.chain().focus().insertContent(transcriptionResult.text).run();
+          toast.success('Transcription complete!');
+        } else {
+          toast.error('Failed to transcribe audio.');
+        }
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+      toast.info('Recording started...');
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      toast.error('Failed to access microphone. Please ensure permissions are granted.');
+    }
   };
 
   const handleCaptureAudio = () => {
-    // TODO: Implement audio capture
-    toast.info('Audio capture coming soon!');
+    // This typically refers to capturing system audio, which is more complex.
+    // For now, we'll treat it similar to direct recording from microphone.
+    // If specific system audio capture is needed, it requires more advanced APIs or browser extensions.
+    toast.info('System audio capture is not directly supported via web APIs. Using microphone recording.');
+    handleRecord(); // Fallback to microphone recording
   };
 
   const handleUploadAudio = () => {
-    // TODO: Implement audio upload
-    toast.info('Audio upload coming soon!');
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'audio/*';
+    input.onchange = async (event) => {
+      const file = (event.target as HTMLInputElement).files?.[0];
+      if (file) {
+        console.log('Selected audio file for upload:', file);
+        toast.info('Audio file selected. Transcribing...');
+
+        const transcriptionResult = await uploadAudioForTranscription(file);
+        if (transcriptionResult?.text) {
+          editor?.chain().focus().insertContent(transcriptionResult.text).run();
+          toast.success('Transcription complete!');
+        } else {
+          toast.error('Failed to transcribe audio.');
+        }
+      }
+    };
+    input.click();
   };
 
   // AI handlers
-  const handleEnhance = () => {
-    // TODO: Implement text enhancement with AI
-    toast.info('Text enhancement coming soon!');
+  const handleEnhance = async () => {
+    const selectedText = editor?.state.selection.empty ? editor?.getText() : editor?.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to, ' ');
+    if (!selectedText) {
+      toast.info('Please select some text to enhance.');
+      return;
+    }
+    toast.info('Enhancing text...');
+    const result = await runAgentTool(noteId, 'text_enhancement_tool.rephrase_text', { text: selectedText, style: 'creative' }, note?.agent_id);
+    if (result?.success && result.output) {
+      editor?.chain().focus().insertContent(result.output).run();
+      toast.success('Text enhanced successfully!');
+    } else {
+      toast.error(`Failed to enhance text: ${result?.output || 'Unknown error'}`);
+    }
+  };
+
+  const handleSummarize = async () => {
+    const selectedText = editor?.state.selection.empty ? editor?.getText() : editor?.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to, ' ');
+    if (!selectedText) {
+      toast.info('Please select some text to summarize.');
+      return;
+    }
+    toast.info('Summarizing text...');
+    const result = await runAgentTool(noteId, 'text_enhancement_tool.summarize_text', { text: selectedText, length: 'short' }, note?.agent_id);
+    if (result?.success && result.output) {
+      editor?.chain().focus().insertContent(result.output).run();
+      toast.success('Text summarized successfully!');
+    } else {
+      toast.error(`Failed to summarize text: ${result?.output || 'Unknown error'}`);
+    }
+  };
+
+  const handleCorrectGrammar = async () => {
+    const selectedText = editor?.state.selection.empty ? editor?.getText() : editor?.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to, ' ');
+    if (!selectedText) {
+      toast.info('Please select some text to correct grammar.');
+      return;
+    }
+    toast.info('Correcting grammar...');
+    const result = await runAgentTool(noteId, 'text_enhancement_tool.correct_grammar', { text: selectedText }, note?.agent_id);
+    if (result?.success && result.output) {
+      editor?.chain().focus().insertContent(result.output).run();
+      toast.success('Grammar corrected successfully!');
+    } else {
+      toast.error(`Failed to correct grammar: ${result?.output || 'Unknown error'}`);
+    }
+  };
+
+  const handleExpand = async () => {
+    const selectedText = editor?.state.selection.empty ? editor?.getText() : editor?.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to, ' ');
+    if (!selectedText) {
+      toast.info('Please select some text to expand.');
+      return;
+    }
+    toast.info('Expanding text...');
+    const result = await runAgentTool(noteId, 'text_enhancement_tool.expand_text', { text: selectedText, detail_level: 'medium' }, note?.agent_id);
+    if (result?.success && result.output) {
+      editor?.chain().focus().insertContent(result.output).run();
+      toast.success('Text expanded successfully!');
+    } else {
+      toast.error(`Failed to expand text: ${result?.output || 'Unknown error'}`);
+    }
   };
 
   const handleAIChat = () => {
@@ -516,11 +642,11 @@ export function NoteEditor({
   return (
     <div className={cn("flex flex-col h-full bg-background", className)}>
       {/* Header */}
-      <div className="p-6 border-b border-border/40">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4 flex-1 min-w-0">
+      <div className="p-3 sm:p-4 md:p-6 border-b border-border/40">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
             {onBack && (
-              <Button variant="ghost" size="sm" onClick={onBack}>
+              <Button variant="ghost" size="sm" onClick={onBack} className="p-1 sm:p-2">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
@@ -529,12 +655,11 @@ export function NoteEditor({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Untitled"
-              className="text-2xl font-semibold border-none p-0 h-auto bg-transparent focus-visible:ring-0 flex-1"
-              style={{ fontSize: '1.5rem', lineHeight: '2rem' }}
+              className="text-lg sm:text-xl md:text-2xl font-semibold border-none p-0 h-auto bg-transparent focus-visible:ring-0 flex-1"
             />
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
             {editor && (
               <>
                 <Button
@@ -542,6 +667,7 @@ export function NoteEditor({
                   size="sm"
                   onClick={() => editor.chain().focus().undo().run()}
                   disabled={!editor.can().undo()}
+                  className="p-1.5 sm:p-2"
                 >
                   <Undo className="h-4 w-4" />
                 </Button>
@@ -550,10 +676,11 @@ export function NoteEditor({
                   size="sm"
                   onClick={() => editor.chain().focus().redo().run()}
                   disabled={!editor.can().redo()}
+                  className="p-1.5 sm:p-2"
                 >
                   <Redo className="h-4 w-4" />
                 </Button>
-                <Separator orientation="vertical" className="h-6" />
+                <Separator orientation="vertical" className="h-6 hidden sm:block" />
               </>
             )}
             
@@ -562,6 +689,7 @@ export function NoteEditor({
               size="sm"
               onClick={handleToggleStar}
               disabled={isTogglingStatus}
+              className="p-1.5 sm:p-2"
             >
               <Star className={cn(
                 "h-4 w-4",
@@ -574,24 +702,25 @@ export function NoteEditor({
               size="sm"
               onClick={handleManualSave}
               disabled={isSaving}
+              className="p-1.5 sm:p-2"
             >
               <Save className="h-4 w-4" />
             </Button>
             
             {enableChat && (
               <>
-                <Separator orientation="vertical" className="h-6" />
+                <Separator orientation="vertical" className="h-6 hidden sm:block" />
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleToggleChat}
-                  className="relative"
+                  className="relative p-1.5 sm:p-2"
                 >
                   <MessageCircle className="h-4 w-4" />
                   {unreadMessages > 0 && (
                     <Badge 
                       variant="destructive" 
-                      className="absolute -top-1 -right-1 h-5 w-5 text-xs p-0 flex items-center justify-center"
+                      className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 text-xs p-0 flex items-center justify-center"
                     >
                       {unreadMessages > 99 ? '99+' : unreadMessages}
                     </Badge>
@@ -602,7 +731,7 @@ export function NoteEditor({
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="p-1.5 sm:p-2">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -635,7 +764,7 @@ export function NoteEditor({
         </div>
         
         {/* Metadata */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
             <Calendar className="h-4 w-4" />
             <span>{format(new Date(note.created_at), 'MMM d, yyyy')}</span>
@@ -673,17 +802,20 @@ export function NoteEditor({
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Editor */}
         <div className={cn(
-          "flex-1 overflow-auto transition-all duration-300 relative",
+          "flex-1 overflow-auto transition-all duration-300",
           isChatVisible && enableChat ? "mr-0" : ""
         )}>
-          <div className="h-full w-full p-6 pb-20">
+          <div className="h-full w-full p-3 sm:p-4 md:p-6 pb-16 sm:pb-20">
             <EditorContent 
               editor={editor} 
               className="min-h-[400px] w-full"
             />
+            
+            {/* YouTube Preview Handler */}
+            {editor && <YouTubePreviewHandler editor={editor} />}
             
             {/* Attachments Section */}
             {attachments.length > 0 && (
@@ -697,9 +829,9 @@ export function NoteEditor({
             )}
           </div>
           
-          {/* Floating Action Buttons - Inside Editor Container */}
+          {/* Floating Action Buttons - Fixed position relative to editor */}
           {/* Record Menu - Bottom Left */}
-          <div className="fixed bottom-6 left-6 z-50">
+          <div className="absolute bottom-4 left-4 z-40">
             <RecordMenu
               onRecord={handleRecord}
               onCaptureAudio={handleCaptureAudio}
@@ -708,35 +840,41 @@ export function NoteEditor({
               <Button
                 size="icon"
                 variant="secondary"
-                className="h-10 w-10 rounded-full shadow-md hover:shadow-lg transition-all hover:scale-105"
+                className="h-10 w-10 sm:h-12 sm:w-12 rounded-full shadow-md hover:shadow-lg transition-all hover:scale-105"
               >
-                <Mic className="h-4 w-4" />
+                <Mic className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </RecordMenu>
           </div>
 
-          {/* AI Menu - Bottom Right */}
-          <div className="fixed bottom-6 right-6 z-50">
+          {/* AI Menu - Bottom Right (adjusts position when chat is open) */}
+          <div className={cn(
+            "absolute bottom-4 z-40 transition-all duration-300",
+            isChatVisible && enableChat ? "right-4" : "right-4"
+          )}>
             <AIMenu
               onEnhance={handleEnhance}
+              onSummarize={handleSummarize}
+              onCorrectGrammar={handleCorrectGrammar}
+              onExpand={handleExpand}
               onChat={handleAIChat}
             >
               <Button
                 size="icon"
                 variant="secondary"
-                className="h-10 w-10 rounded-full shadow-md hover:shadow-lg transition-all hover:scale-105"
+                className="h-10 w-10 sm:h-12 sm:w-12 rounded-full shadow-md hover:shadow-lg transition-all hover:scale-105"
               >
-                <Sparkles className="h-4 w-4" />
+                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </AIMenu>
           </div>
         </div>
 
-        {/* Chat Panel */}
+        {/* Chat Panel - Responsive width */}
         {enableChat && (
           <div className={cn(
             "transition-all duration-300 ease-in-out border-l bg-background",
-            isChatVisible ? "w-96" : "w-0 overflow-hidden"
+            isChatVisible ? "w-full sm:w-80 md:w-96 absolute sm:relative inset-0 sm:inset-auto" : "w-0 overflow-hidden"
           )}>
             {isChatVisible && (
               <NoteChat

@@ -48,7 +48,7 @@ function NotesPageContent() {
   return (
     <NotesContainer
       userId={userId}
-      className="h-full"
+      className="h-full flex-1"
       showSidebar={true}
     />
   );
@@ -56,12 +56,14 @@ function NotesPageContent() {
 
 export default function NotesPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    }>
-      <NotesPageContent />
-    </Suspense>
+    <div className="h-screen flex flex-col">
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-full">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      }>
+        <NotesPageContent />
+      </Suspense>
+    </div>
   );
 }

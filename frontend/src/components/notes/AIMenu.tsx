@@ -13,12 +13,18 @@ import { Sparkles, MessageCircle } from 'lucide-react';
 interface AIMenuProps {
   onEnhance: () => void;
   onChat: () => void;
+  onSummarize: () => void;
+  onCorrectGrammar: () => void;
+  onExpand: () => void;
   children?: React.ReactNode;
 }
 
 export function AIMenu({
   onEnhance,
   onChat,
+  onSummarize,
+  onCorrectGrammar,
+  onExpand,
   children
 }: AIMenuProps) {
   return (
@@ -38,6 +44,18 @@ export function AIMenu({
         <DropdownMenuItem onClick={onEnhance}>
           <Sparkles className="mr-2 h-4 w-4" />
           Enhance
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onSummarize}>
+          <Sparkles className="mr-2 h-4 w-4" />
+          Summarize
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onCorrectGrammar}>
+          <Sparkles className="mr-2 h-4 w-4" />
+          Correct Grammar
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onExpand}>
+          <Sparkles className="mr-2 h-4 w-4" />
+          Expand
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onChat}>
           <MessageCircle className="mr-2 h-4 w-4" />

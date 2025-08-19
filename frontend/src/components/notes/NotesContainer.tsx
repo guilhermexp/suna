@@ -157,11 +157,9 @@ export function NotesContainer({
         </div>
       )}
 
-      {/* Main content */}
+      {/* Main content - removido o Card wrapper que estava adicionando espaço */}
       <div className="flex-1 overflow-hidden">
-        <Card className="h-full border-0 rounded-none bg-transparent">
-          {renderContent()}
-        </Card>
+        {renderContent()}
       </div>
     </div>
   );

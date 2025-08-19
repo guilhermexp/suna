@@ -49,7 +49,13 @@ export function useNoteChat(noteId: string, userId: string, userName?: string) {
       .channel(`note-chat:${noteId}`)
       .on('presence', { event: 'sync' }, () => {
         const newState = channel.presenceState();
-        const users = Object.values(newState).flat() as PresenceUser[];
+        const users = Object.values(newState).flat().map((presence: any) => ({
+          id: presence.id,
+          name: presence.name,
+          avatar: presence.avatar,
+          email: presence.email,
+          online_at: presence.online_at,
+        })) as PresenceUser[];
         setOnlineUsers(users.filter(user => user.id !== userId));
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {

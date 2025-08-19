@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, HttpUrl
 from utils.auth_utils import get_current_user_id_from_jwt, verify_agent_access
 from services.supabase import DBConnection
 from knowledge_base.file_processor import FileProcessor
+from knowledge_base.content_processor import ContentProcessor, process_url_background, process_text_content_background
 from utils.logger import logger
 from flags.flags import is_enabled
 
@@ -50,6 +51,16 @@ class UpdateKnowledgeBaseEntryRequest(BaseModel):
     content: Optional[str] = Field(None, min_length=1)
     usage_context: Optional[str] = Field(None, pattern="^(always|on_request|contextual)$")
     is_active: Optional[bool] = None
+
+class ProcessUrlRequest(BaseModel):
+    url: HttpUrl
+
+class ProcessTextRequest(BaseModel):
+    text_content: str = Field(..., min_length=1)
+    name: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    source_type: str = "text_input"
+    source_metadata: Optional[dict] = None
 
 class ProcessingJobResponse(BaseModel):
     job_id: str
@@ -236,6 +247,121 @@ async def upload_file_to_agent_kb(
     except Exception as e:
         logger.error(f"Error uploading file to agent {agent_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to upload file")
+
+
+@router.post("/agents/{agent_id}/upload-url")
+async def upload_url_to_agent_kb(
+    agent_id: str,
+    background_tasks: BackgroundTasks,
+    url_data: ProcessUrlRequest,
+    user_id: str = Depends(get_current_user_id_from_jwt)
+):
+    if not await is_enabled("knowledge_base"):
+        raise HTTPException(
+            status_code=403,
+            detail="This feature is not available at the moment."
+        )
+
+    """Upload and process a URL for agent knowledge base"""
+    try:
+        client = await db.client
+
+        # Verify agent access and get agent data
+        agent_data = await verify_agent_access(client, agent_id, user_id)
+        account_id = agent_data['account_id']
+
+        job_id = await client.rpc('create_agent_kb_processing_job', {
+            'p_agent_id': agent_id,
+            'p_account_id': account_id,
+            'p_job_type': 'url_processing',
+            'p_source_info': {
+                'url': str(url_data.url)
+            }
+        }).execute()
+
+        if not job_id.data:
+            raise HTTPException(status_code=500, detail="Failed to create processing job")
+
+        job_id = job_id.data
+        background_tasks.add_task(
+            process_url_background,
+            job_id,
+            agent_id,
+            account_id,
+            str(url_data.url),
+            "url" # source_type
+        )
+
+        return {
+            "job_id": job_id,
+            "message": "URL processing started. Processing in background.",
+            "url": str(url_data.url)
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error uploading URL to agent {agent_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to upload URL for processing")
+
+@router.post("/agents/{agent_id}/process-text")
+async def process_text_to_agent_kb(
+    agent_id: str,
+    background_tasks: BackgroundTasks,
+    text_data: ProcessTextRequest,
+    user_id: str = Depends(get_current_user_id_from_jwt)
+):
+    if not await is_enabled("knowledge_base"):
+        raise HTTPException(
+            status_code=403,
+            detail="This feature is not available at the moment."
+        )
+
+    """Process raw text content for agent knowledge base"""
+    try:
+        client = await db.client
+
+        # Verify agent access and get agent data
+        agent_data = await verify_agent_access(client, agent_id, user_id)
+        account_id = agent_data['account_id']
+
+        job_id = await client.rpc('create_agent_kb_processing_job', {
+            'p_agent_id': agent_id,
+            'p_account_id': account_id,
+            'p_job_type': 'text_processing',
+            'p_source_info': {
+                'name': text_data.name,
+                'content_length': len(text_data.text_content)
+            }
+        }).execute()
+
+        if not job_id.data:
+            raise HTTPException(status_code=500, detail="Failed to create processing job")
+
+        job_id = job_id.data
+        background_tasks.add_task(
+            process_text_content_background,
+            job_id,
+            agent_id,
+            account_id,
+            text_data.text_content,
+            text_data.name,
+            text_data.description,
+            text_data.source_type,
+            text_data.source_metadata
+        )
+
+        return {
+            "job_id": job_id,
+            "message": "Text processing started. Processing in background.",
+            "name": text_data.name
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error processing text for agent {agent_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to process text for knowledge base")
 
 
 @router.put("/{entry_id}", response_model=KnowledgeBaseEntryResponse)

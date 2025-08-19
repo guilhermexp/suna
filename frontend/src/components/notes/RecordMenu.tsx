@@ -1,53 +1,37 @@
 'use client';
 
-import React from 'react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mic, MousePointer2, Upload } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Mic, ArrowUpFromLine, FileAudio } from 'lucide-react';
 
 interface RecordMenuProps {
   onRecord: () => void;
   onCaptureAudio: () => void;
   onUpload: () => void;
-  children?: React.ReactNode;
+  children: React.ReactNode;
 }
 
-export function RecordMenu({
-  onRecord,
-  onCaptureAudio,
-  onUpload,
-  children
-}: RecordMenuProps) {
+export function RecordMenu({ onRecord, onCaptureAudio, onUpload, children }: RecordMenuProps) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        {children || (
-          <Button 
-            size="icon" 
-            className="h-10 w-10 rounded-full shadow-lg"
-            variant="default"
-          >
-            <Mic className="h-4 w-4" />
-          </Button>
-        )}
+        {children}
       </DropdownMenuTrigger>
-      <DropdownMenuContent side="top" align="start" className="w-48">
-        <DropdownMenuItem onClick={onRecord}>
-          <Mic className="mr-2 h-4 w-4" />
-          Record
+      <DropdownMenuContent className="w-[170px] text-sm rounded-xl px-1 py-1.5 z-50 bg-white dark:bg-gray-850 dark:text-white shadow-lg font-primary" sideOffset={8} side="bottom" align="start">
+        <DropdownMenuItem onClick={() => { onRecord(); setOpen(false); }} className="flex rounded-md py-1.5 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+          <Mic className="size-4 mr-2" strokeWidth={2} />
+          <span>Record</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={onCaptureAudio}>
-          <MousePointer2 className="mr-2 h-4 w-4" />
-          Capture Audio
+        <DropdownMenuItem onClick={() => { onCaptureAudio(); setOpen(false); }} className="flex rounded-md py-1.5 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+          <FileAudio className="size-4 mr-2" strokeWidth={2} />
+          <span>Capture Audio</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={onUpload}>
-          <Upload className="mr-2 h-4 w-4" />
-          Upload Audio
+        <DropdownMenuItem onClick={() => { onUpload(); setOpen(false); }} className="flex rounded-md py-1.5 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+          <ArrowUpFromLine className="size-4 mr-2" strokeWidth={2} />
+          <span>Upload Audio</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -1,6 +1,20 @@
 from typing import Dict, Any, Optional, List
 from utils.logger import logger
+from agent.tools.text_enhancement_tool import TextEnhancementTool
+from services.supabase import DBConnection
 
+# Global instance of DBConnection for tools
+_db_connection_for_tools = None
+
+def initialize_tool_db_connection(db_conn: DBConnection):
+    global _db_connection_for_tools
+    _db_connection_for_tools = db_conn
+
+# Mapping of tool names to their classes
+TOOL_CLASSES = {
+    "text_enhancement_tool": TextEnhancementTool,
+    # Add other tools here as they are implemented
+}
 
 def extract_agent_config(agent_data: Dict[str, Any], version_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     agent_id = agent_data.get('agent_id', 'Unknown')
@@ -177,19 +191,26 @@ def _extract_agentpress_tools_for_run(agentpress_config: Dict[str, Any]) -> Dict
         return {}
     
     run_tools = {}
-    for tool_name, enabled in agentpress_config.items():
-        if isinstance(enabled, bool):
-            run_tools[tool_name] = {
-                'enabled': enabled,
-                'description': f"{tool_name} tool"
-            }
-        elif isinstance(enabled, dict):
-            run_tools[tool_name] = enabled
-        else:
-            run_tools[tool_name] = {
-                'enabled': bool(enabled),
-                'description': f"{tool_name} tool"
-            }
+    for tool_name, tool_config in agentpress_config.items():
+        is_enabled = False
+        if isinstance(tool_config, bool):
+            is_enabled = tool_config
+        elif isinstance(tool_config, dict):
+            is_enabled = tool_config.get('enabled', False)
+
+        if is_enabled:
+            if tool_name in TOOL_CLASSES:
+                if _db_connection_for_tools is None:
+                    logger.error("DBConnection for tools not initialized. Cannot instantiate tool.")
+                    continue
+                try:
+                    # Instantiate the tool class, passing the DBConnection
+                    run_tools[tool_name] = TOOL_CLASSES[tool_name](db=_db_connection_for_tools)
+                    logger.debug(f"Instantiated AgentPress tool: {tool_name}")
+                except Exception as e:
+                    logger.error(f"Failed to instantiate tool {tool_name}: {e}")
+            else:
+                logger.warning(f"Attempted to enable unknown AgentPress tool: {tool_name}")
     
     return run_tools
 
