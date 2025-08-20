@@ -10,10 +10,14 @@ const fetchTriggerProviders = async (): Promise<TriggerProvider[]> => {
   if (!session) {
     throw new Error('You must be logged in to create a trigger');
   }
-  const response = await fetch(`${API_URL}/triggers/providers`, {
+  const response = await fetch(`${API_URL}/api/triggers/providers`, {
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
   });
   if (!response.ok) {
+    // Handle 403 gracefully by returning empty array
+    if (response.status === 403) {
+      return [];
+    }
     throw new Error('Failed to fetch trigger providers');
   }
   return response.json();

@@ -394,39 +394,40 @@ export function NotesList({
                 </h3>
                 <div className={cn(
                   "grid gap-4",
-                  "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                  "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                 )}>
                   {groupNotes.map((note) => (
                     <Card 
                       key={note.id}
                       className={cn(
                         "cursor-pointer transition-all hover:shadow-md",
+                        "h-[120px] overflow-hidden",
                         selectedNoteId === note.id && "ring-2 ring-primary",
                         note.is_archived && "opacity-60"
                       )}
                       onClick={() => onNoteSelect?.(note)}
                     >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <h4 className="font-medium line-clamp-1 flex-1">
+                      <div className="p-3 h-full flex flex-col">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-sm font-semibold line-clamp-1 flex-1">
                             {note.title || 'Untitled'}
                           </h4>
-                          <div className="flex items-center gap-1 ml-2">
+                          <div className="flex items-center gap-1 ml-2 flex-shrink-0">
                             {note.is_starred && (
-                              <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                              <Star className="h-3 w-3 text-yellow-500 fill-current" />
                             )}
                             {note.is_archived && (
-                              <Archive className="h-4 w-4 text-muted-foreground" />
+                              <Archive className="h-3 w-3 text-muted-foreground" />
                             )}
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
-                                  className="h-6 w-6 p-0"
+                                  className="h-5 w-5 p-0"
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  <MoreHorizontal className="h-4 w-4" />
+                                  <MoreHorizontal className="h-3 w-3" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
@@ -466,26 +467,16 @@ export function NotesList({
                             </DropdownMenu>
                           </div>
                         </div>
-                      </CardHeader>
-                      <CardContent className="p-3 sm:p-4 pt-0">
-                        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-3 mb-2 sm:mb-3">
+                        
+                        <p className="text-xs text-muted-foreground line-clamp-3 flex-1 overflow-hidden">
                           {formatContent(note.content, note.content_text)}
                         </p>
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 text-xs text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            <span className="truncate">{formatDistanceToNow(new Date(note.updated_at), { addSuffix: true })}</span>
-                          </div>
-                          {note.word_count > 0 && (
-                            <div className="flex items-center gap-1">
-                              <span>{note.word_count} words</span>
-                              {note.reading_time > 0 && (
-                                <span className="hidden sm:inline">• {note.reading_time} min</span>
-                              )}
-                            </div>
-                          )}
+                        
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-auto pt-2">
+                          <span>{formatDistanceToNow(new Date(note.updated_at), { addSuffix: true })}</span>
+                          <span>Por {note.author_name || 'Unknown'}</span>
                         </div>
-                      </CardContent>
+                      </div>
                     </Card>
                   ))}
                 </div>

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Upload, Link2, X, Image as ImageIcon } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -167,6 +167,9 @@ export function ProfilePictureDialog({
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader className="pb-2">
           <DialogTitle className="text-center">Profile Picture</DialogTitle>
+          <DialogDescription className="text-center text-sm text-muted-foreground">
+            Upload or link a profile picture for your agent
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6">

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -194,6 +194,9 @@ export function ShareModal({ isOpen, onClose, threadId, projectId }: ShareModalP
             <Share2 className="h-5 w-5" />
             Share Chat
           </DialogTitle>
+          <DialogDescription>
+            Share this chat publicly or copy the link to share with others
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">

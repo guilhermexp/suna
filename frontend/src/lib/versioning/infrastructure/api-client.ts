@@ -26,7 +26,7 @@ export class SupabaseApiClient implements IApiClient {
 
   async get<T>(url: string): Promise<T> {
     const headers = await this.getAuthHeaders();
-    const response = await fetch(`${API_URL}${url}`, {
+    const response = await fetch(`${API_URL}/api${url}`, {
       method: 'GET',
       headers,
     });
@@ -41,7 +41,7 @@ export class SupabaseApiClient implements IApiClient {
 
   async post<T>(url: string, data?: any): Promise<T> {
     const headers = await this.getAuthHeaders();
-    const response = await fetch(`${API_URL}${url}`, {
+    const response = await fetch(`${API_URL}/api${url}`, {
       method: 'POST',
       headers,
       body: data ? JSON.stringify(data) : undefined,
@@ -57,7 +57,7 @@ export class SupabaseApiClient implements IApiClient {
 
   async put<T>(url: string, data?: any): Promise<T> {
     const headers = await this.getAuthHeaders();
-    const response = await fetch(`${API_URL}${url}`, {
+    const response = await fetch(`${API_URL}/api${url}`, {
       method: 'PUT',
       headers,
       body: data ? JSON.stringify(data) : undefined,
@@ -73,7 +73,7 @@ export class SupabaseApiClient implements IApiClient {
 
   async delete(url: string): Promise<void> {
     const headers = await this.getAuthHeaders();
-    const response = await fetch(`${API_URL}${url}`, {
+    const response = await fetch(`${API_URL}/api${url}`, {
       method: 'DELETE',
       headers,
     });

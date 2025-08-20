@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Fragment, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -1103,6 +1104,9 @@ export function FileViewerModal({
           <DialogTitle className="text-lg font-semibold">
             Workspace Files
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Browse and manage files in your workspace
+          </DialogDescription>
 
           {/* Download progress display */}
           {downloadProgress && (

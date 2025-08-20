@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -170,6 +170,9 @@ export const PlaybookCreateModal: React.FC<PlaybookCreateModalProps> = ({
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>{isEditing ? 'Edit Playbook' : 'Create Playbook'}</DialogTitle>
+                    <DialogDescription>
+                        {isEditing ? 'Edit your playbook configuration and settings' : 'Create a new playbook with custom templates and variables'}
+                    </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4">

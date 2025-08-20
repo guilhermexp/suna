@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { EditorContent, Editor } from '@tiptap/react';
 import { cn } from '@/lib/utils';
 
@@ -8,7 +8,12 @@ interface YouTubePreviewHandlerProps {
   editor: Editor | null;
 }
 
-export function YouTubePreviewHandler({ editor }: YouTubePreviewHandlerProps) {
+export interface YouTubePreviewHandlerRef {
+  processLinks: () => void;
+}
+
+export const YouTubePreviewHandler = forwardRef<YouTubePreviewHandlerRef, YouTubePreviewHandlerProps>(
+  ({ editor }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const extractYouTubeId = (url: string): string | null => {
@@ -26,24 +31,150 @@ export function YouTubePreviewHandler({ editor }: YouTubePreviewHandlerProps) {
     return null;
   };
 
-  const processYouTubeLinks = () => {
-    if (!containerRef.current || !editor) {
+  const processYouTubeLinks = React.useCallback(() => {
+    if (!editor) {
       return;
     }
 
-    const editorContent = containerRef.current;
+    // Get the editor HTML content
+    const content = editor.getHTML();
+    
+    // Pattern to find YouTube URLs
+    const youtubePattern = /https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})(?:[^\s<]*)?/g;
+    
+    // Check if there are any YouTube URLs that are not already embedded
+    const matches = Array.from(content.matchAll(youtubePattern));
+    if (matches.length === 0) {
+      return;
+    }
+    
+    // Create a temporary div to work with the HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = content;
+    
+    // Find all text nodes that contain YouTube URLs
+    const walker = document.createTreeWalker(
+      tempDiv,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode: (node) => {
+          const text = node.textContent || '';
+          return youtubePattern.test(text) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+        }
+      }
+    );
+    
+    const replacements: Array<{
+      node: Node;
+      parent: Node;
+      url: string;
+      videoId: string;
+    }> = [];
+    
+    // Reset pattern for new search
+    youtubePattern.lastIndex = 0;
+    
+    let textNode;
+    while (textNode = walker.nextNode()) {
+      const text = textNode.textContent || '';
+      youtubePattern.lastIndex = 0; // Reset for each node
+      const nodeMatches = Array.from(text.matchAll(youtubePattern));
+      
+      for (const match of nodeMatches) {
+        const url = match[0];
+        const videoId = match[3];
+        
+        // Check if this URL is already inside an anchor or near an iframe
+        const parent = textNode.parentNode as HTMLElement;
+        if (parent && parent.tagName !== 'A' && 
+            !parent.querySelector(`iframe[src*="${videoId}"]`) &&
+            !parent.parentElement?.querySelector(`iframe[src*="${videoId}"]`)) {
+          replacements.push({
+            node: textNode,
+            parent: textNode.parentNode!,
+            url,
+            videoId
+          });
+        }
+      }
+    }
+    
+    // Process replacements
+    let contentChanged = false;
+    for (const { node, parent, url, videoId } of replacements) {
+      const text = node.textContent || '';
+      
+      // Create a wrapper div
+      const wrapper = document.createElement('div');
+      
+      // Split the text around the URL
+      const urlIndex = text.indexOf(url);
+      if (urlIndex === -1) continue;
+      
+      const beforeText = text.substring(0, urlIndex);
+      const afterText = text.substring(urlIndex + url.length);
+      
+      // Add text before URL
+      if (beforeText) {
+        const textSpan = document.createElement('span');
+        textSpan.textContent = beforeText;
+        wrapper.appendChild(textSpan);
+      }
+      
+      // Add the URL as a paragraph to preserve it
+      const urlParagraph = document.createElement('p');
+      urlParagraph.textContent = url;
+      urlParagraph.className = 'youtube-url-preserved';
+      wrapper.appendChild(urlParagraph);
+      
+      // Add the YouTube embed
+      const embedDiv = document.createElement('div');
+      embedDiv.className = 'youtube-embed-container my-4';
+      embedDiv.innerHTML = `
+        <div class="relative w-full" style="padding-bottom: 56.25%;">
+          <iframe
+            class="absolute top-0 left-0 w-full h-full rounded-lg shadow-lg"
+            src="https://www.youtube.com/embed/${videoId}"
+            title="YouTube video player"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+          ></iframe>
+        </div>
+      `;
+      wrapper.appendChild(embedDiv);
+      
+      // Add text after URL
+      if (afterText) {
+        const textSpan = document.createElement('span');
+        textSpan.textContent = afterText;
+        wrapper.appendChild(textSpan);
+      }
+      
+      // Replace the text node
+      parent.replaceChild(wrapper, node);
+      contentChanged = true;
+    }
+    
+    // Update the editor with the new content if changes were made
+    if (contentChanged) {
+      const newContent = tempDiv.innerHTML;
+      editor.commands.setContent(newContent, false, {
+        preserveWhitespace: true
+      });
+    }
 
-    // Find all links in the container or editor content
-    const links = editorContent.querySelectorAll('a[href*="youtube.com"], a[href*="youtu.be"]');
+    // Also process existing anchor tags
+    const links = editor.view.dom.querySelectorAll('a[href*="youtube.com"], a[href*="youtu.be"]');
 
     links.forEach((link: HTMLAnchorElement) => {
       const videoId = extractYouTubeId(link.href);
       if (!videoId) return;
 
-      // Check if this link already has a preview button
+      // Check if this link already has a preview
       if (
-        link.nextElementSibling?.classList.contains('youtube-preview-toggle') ||
-        link.nextElementSibling?.classList.contains('youtube-preview-button')
+        link.nextElementSibling?.classList.contains('youtube-preview-container') ||
+        link.parentElement?.querySelector('.youtube-preview-container')
       ) {
         return;
       }
@@ -80,7 +211,7 @@ export function YouTubePreviewHandler({ editor }: YouTubePreviewHandlerProps) {
         togglePreview(videoId, previewContainer);
       });
     });
-  };
+  }, [editor]);
 
   const togglePreview = (videoId: string, container: HTMLElement) => {
     const isVisible = !container.classList.contains('hidden');
@@ -109,6 +240,11 @@ export function YouTubePreviewHandler({ editor }: YouTubePreviewHandlerProps) {
     }
   };
 
+  // Expose the processLinks function through ref
+  useImperativeHandle(ref, () => ({
+    processLinks: processYouTubeLinks
+  }), [processYouTubeLinks]);
+
   useEffect(() => {
     if (!editor) return;
 
@@ -131,11 +267,13 @@ export function YouTubePreviewHandler({ editor }: YouTubePreviewHandlerProps) {
     return () => {
       observer.disconnect();
     };
-  }, [editor]);
+  }, [editor, processYouTubeLinks]);
 
   return (
     <div ref={containerRef} className="youtube-preview-handler-container">
       {/* The editor content will be rendered here by NoteEditor.tsx */}
     </div>
   );
-}
+});
+
+YouTubePreviewHandler.displayName = 'YouTubePreviewHandler';

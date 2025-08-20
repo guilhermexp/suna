@@ -308,6 +308,251 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
+/* TipTap Editor Styles from Open Notes - Enhanced */
+.tiptap {
+  @apply h-full min-h-fit max-h-full whitespace-pre-wrap;
+  line-height: 1.75;
+  color: inherit;
+}
+
+.tiptap:focus {
+  outline: none;
+}
+
+.tiptap p {
+  @apply my-3;
+  line-height: 1.75;
+}
+
+.tiptap h1 {
+  @apply text-3xl font-bold mt-6 mb-4;
+  line-height: 1.2;
+}
+
+.tiptap h2 {
+  @apply text-2xl font-bold mt-5 mb-3;
+  line-height: 1.3;
+}
+
+.tiptap h3 {
+  @apply text-xl font-semibold mt-4 mb-3;
+  line-height: 1.4;
+}
+
+.tiptap h4 {
+  @apply text-lg font-semibold mt-3 mb-2;
+  line-height: 1.5;
+}
+
+.tiptap h5 {
+  @apply text-base font-semibold mt-3 mb-2;
+}
+
+.tiptap h6 {
+  @apply text-sm font-semibold mt-2 mb-2;
+}
+
+/* Lists with better spacing and nested support */
+.tiptap ul {
+  @apply my-3 pl-6;
+  list-style-type: disc;
+}
+
+.tiptap ol {
+  @apply my-3 pl-6;
+  list-style-type: decimal;
+}
+
+.tiptap li {
+  @apply my-1.5;
+  line-height: 1.75;
+}
+
+/* Nested lists */
+.tiptap ul ul {
+  @apply mt-1 mb-1 pl-6;
+  list-style-type: circle;
+}
+
+.tiptap ul ul ul {
+  @apply pl-6;
+  list-style-type: square;
+}
+
+.tiptap ol ol {
+  @apply mt-1 mb-1 pl-6;
+  list-style-type: lower-alpha;
+}
+
+.tiptap blockquote {
+  @apply border-l-4 border-gray-300 dark:border-gray-600 pl-4 my-4 italic text-gray-700 dark:text-gray-300;
+}
+
+.tiptap strong, .tiptap b {
+  @apply font-bold;
+}
+
+.tiptap em, .tiptap i {
+  @apply italic;
+}
+
+.tiptap code {
+  @apply px-1.5 py-0.5 mx-0.5 text-sm bg-gray-100 dark:bg-gray-800 rounded font-mono text-red-600 dark:text-red-400;
+  font-size: 0.875em;
+}
+
+.tiptap pre {
+  @apply bg-gray-900 dark:bg-gray-950 text-gray-100 p-4 rounded-lg my-4 overflow-x-auto;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+.tiptap pre code {
+  @apply bg-transparent p-0 text-inherit text-gray-100;
+}
+
+/* Links with better styling */
+.tiptap a {
+  @apply text-blue-600 dark:text-blue-400 underline decoration-1 hover:decoration-2 transition-all;
+  cursor: pointer;
+}
+
+.tiptap a:hover {
+  @apply text-blue-700 dark:text-blue-300;
+}
+
+.tiptap hr {
+  @apply my-6 border-gray-200 dark:border-gray-700;
+}
+
+/* Task lists with checkbox styling */
+.tiptap ul[data-type='taskList'] {
+  @apply list-none pl-0 my-3;
+}
+
+.tiptap ul[data-type='taskList'] > li {
+  @apply flex items-start my-1.5;
+}
+
+.tiptap ul[data-type='taskList'] > li > label {
+  @apply flex items-start;
+}
+
+.tiptap ul[data-type='taskList'] > li > label > input[type='checkbox'],
+.tiptap input[type='checkbox'] {
+  @apply mr-2 mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500;
+}
+
+/* Regular task list items */
+.tiptap ul li input[type='checkbox'] {
+  @apply mr-2 mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500;
+}
+
+/* Task items from marked */
+.tiptap .task-list-item {
+  @apply flex items-start list-none;
+}
+
+.tiptap .task-list-item input[type='checkbox'] {
+  @apply mr-2 mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500;
+}
+
+/* Placeholder text */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  @apply text-gray-400 pointer-events-none float-left h-0;
+}
+
+/* Tables */
+.tiptap table {
+  @apply w-full my-4 border-collapse;
+}
+
+.tiptap th,
+.tiptap td {
+  @apply border border-gray-300 dark:border-gray-600 px-3 py-2 text-left;
+}
+
+.tiptap th {
+  @apply bg-gray-100 dark:bg-gray-800 font-semibold;
+}
+
+.tiptap tr:hover {
+  @apply bg-gray-50 dark:bg-gray-800/50;
+}
+
+/* Syntax Highlighting from highlight.js */
+.hljs {
+  @apply bg-gray-900 dark:bg-gray-950 text-gray-100 p-4 rounded-lg overflow-x-auto;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: #616161;
+}
+
+.hljs-variable,
+.hljs-template-variable,
+.hljs-attribute,
+.hljs-tag,
+.hljs-regexp,
+.hljs-link,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class {
+  color: #f98181;
+}
+
+.hljs-number,
+.hljs-meta,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params {
+  color: #fbbc88;
+}
+
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet {
+  color: #b9f18d;
+}
+
+.hljs-title,
+.hljs-section {
+  color: #faf594;
+}
+
+.hljs-keyword,
+.hljs-selector-tag {
+  color: #70cff8;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: 700;
+}
+
+/* Inline code with better background */
+code:not(pre code) {
+  @apply px-1.5 py-0.5 mx-0.5 text-sm bg-gray-100 dark:bg-gray-800 rounded font-mono text-red-600 dark:text-red-400;
+}
+
+/* Better pre blocks */
+pre {
+  @apply bg-gray-900 dark:bg-gray-950 text-gray-100 p-4 rounded-lg my-4 overflow-x-auto;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  line-height: 1.5;
+}
+
+pre code {
+  @apply bg-transparent p-0 text-inherit text-gray-100;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

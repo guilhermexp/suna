@@ -92,6 +92,9 @@ const AgentModal: React.FC<AgentModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md p-0 overflow-hidden border-none">
         <DialogTitle className="sr-only">Agent actions</DialogTitle>
+        <DialogDescription className="sr-only">
+          Choose an action for the {agent.name} agent
+        </DialogDescription>
         <div className="relative">
           <div className={`p-4 h-24 flex items-start justify-start relative`}>
             {isSunaAgent ? (

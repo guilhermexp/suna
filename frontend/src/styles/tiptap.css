@@ -1,0 +1,265 @@
+/* TipTap/ProseMirror Styles from Open Notes */
+
+/* Input prose classes - consistent with Open Notes */
+.input-prose {
+  @apply whitespace-pre-line max-w-none;
+  color: inherit;
+  line-height: 1.75;
+}
+
+/* Typography styles for input-prose */
+.input-prose p {
+  @apply my-1;
+}
+
+.input-prose h1,
+.input-prose h2,
+.input-prose h3,
+.input-prose h4,
+.input-prose h5,
+.input-prose h6 {
+  @apply font-semibold my-2;
+}
+
+.input-prose h1 {
+  @apply text-3xl;
+}
+
+.input-prose h2 {
+  @apply text-2xl;
+}
+
+.input-prose h3 {
+  @apply text-xl;
+}
+
+.input-prose h4 {
+  @apply text-lg;
+}
+
+.input-prose hr {
+  @apply my-4 border-gray-100 dark:border-gray-800;
+}
+
+.input-prose img {
+  @apply my-1 max-w-full h-auto rounded-lg;
+}
+
+.input-prose pre {
+  @apply my-0;
+}
+
+.input-prose table {
+  @apply my-1;
+}
+
+.input-prose blockquote {
+  @apply my-0 pl-4 border-l-4 border-gray-300 dark:border-gray-600;
+}
+
+.input-prose ul,
+.input-prose ol {
+  @apply my-1 pl-6;
+}
+
+.input-prose li {
+  @apply my-0.5;
+}
+
+.input-prose ul {
+  list-style-type: disc;
+}
+
+.input-prose ol {
+  list-style-type: decimal;
+}
+
+.input-prose a {
+  @apply text-blue-600 dark:text-blue-400 underline;
+}
+
+.input-prose strong {
+  @apply font-bold;
+}
+
+.input-prose em {
+  @apply italic;
+}
+
+.input-prose code {
+  @apply px-1 py-0.5 text-sm bg-gray-100 dark:bg-gray-800 rounded;
+}
+
+/* Input prose small variant */
+.input-prose-sm {
+  @apply text-sm whitespace-pre-line;
+}
+
+.input-prose-sm h1 {
+  @apply text-2xl font-medium my-2;
+}
+
+.input-prose-sm h2 {
+  @apply text-xl font-medium my-2;
+}
+
+.input-prose-sm h3 {
+  @apply text-lg font-medium my-2;
+}
+
+.input-prose-sm p,
+.input-prose-sm li {
+  @apply my-1;
+}
+
+/* ProseMirror specific styles */
+.ProseMirror {
+  @apply h-full min-h-fit max-h-full whitespace-pre-wrap;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #a1a3a7;
+  pointer-events: none;
+  height: 0;
+  user-select: none;
+}
+
+/* TipTap task lists */
+.tiptap ul[data-type='taskList'] {
+  list-style: none;
+  margin-left: 0;
+  padding-left: 0;
+}
+
+.tiptap ul[data-type='taskList'] li {
+  display: flex;
+  align-items: flex-start;
+}
+
+.tiptap ul[data-type='taskList'] li input[type='checkbox'] {
+  flex-shrink: 0;
+  margin-right: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+/* TipTap mentions */
+.tiptap .mention {
+  border-radius: 0.4rem;
+  box-decoration-break: clone;
+  background-color: rgba(251, 191, 36, 0.1);
+  color: #f59e0b;
+  padding: 0.1rem 0.3rem;
+}
+
+.tiptap .mention::after {
+  content: '\200B';
+}
+
+/* TipTap code blocks */
+.tiptap pre > code {
+  border-radius: 0.4rem;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.5rem;
+  background: none;
+  color: inherit;
+}
+
+.tiptap pre {
+  border-radius: 0.5rem;
+  font-family: 'JetBrainsMono', monospace;
+  background: #111827;
+  color: #e5e7eb;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+}
+
+.tiptap p code {
+  color: #eb5757;
+  border-width: 0px;
+  background-color: rgba(239, 68, 68, 0.1);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+/* Table styling for tiptap editors */
+.tiptap table {
+  @apply w-full text-sm text-left text-gray-500 dark:text-gray-400 max-w-full;
+}
+
+.tiptap thead {
+  @apply text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-400 border-none;
+}
+
+.tiptap th,
+.tiptap td {
+  @apply px-3 py-1.5 border border-gray-100 dark:border-gray-800;
+}
+
+.tiptap th {
+  @apply cursor-pointer text-left text-xs text-gray-700 dark:text-gray-400 font-semibold uppercase bg-gray-50 dark:bg-gray-800;
+}
+
+.tiptap td {
+  @apply text-gray-900 dark:text-white w-max;
+}
+
+.tiptap tr {
+  @apply bg-white dark:bg-gray-900 dark:border-gray-800 text-xs;
+}
+
+/* List item inline paragraphs */
+li p {
+  display: inline;
+}
+
+/* Dark mode specific */
+@media (prefers-color-scheme: dark) {
+  .ProseMirror p.is-editor-empty:first-child::before {
+    color: #757575;
+  }
+}
+
+/* Editor selection */
+.editor-selection {
+  background: rgba(180, 213, 255, 0.5);
+  border-radius: 2px;
+}
+
+/* Collaboration cursors */
+.ProseMirror > .ProseMirror-yjs-cursor:first-child {
+  margin-top: 16px;
+}
+
+.ProseMirror-yjs-cursor {
+  position: relative;
+  margin-left: -1px;
+  margin-right: -1px;
+  border-left: 1px solid black;
+  border-right: 1px solid black;
+  word-break: normal;
+  pointer-events: none;
+}
+
+.ProseMirror-yjs-cursor > div {
+  position: absolute;
+  top: -1.05em;
+  left: -1px;
+  font-size: 13px;
+  background-color: rgb(250, 129, 0);
+  font-family: system-ui;
+  font-style: normal;
+  font-weight: normal;
+  line-height: normal;
+  user-select: none;
+  color: white;
+  padding-left: 2px;
+  padding-right: 2px;
+  white-space: nowrap;
+}

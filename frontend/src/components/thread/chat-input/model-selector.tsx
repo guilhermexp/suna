@@ -15,6 +15,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -843,6 +844,9 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
         <DialogContent className="p-0 max-w-6xl h-[90vh] overflow-hidden">
           <DialogHeader className="sr-only">
             <DialogTitle>Integrations Manager</DialogTitle>
+            <DialogDescription>
+              Manage your AI model integrations and configurations
+            </DialogDescription>
           </DialogHeader>
           <IntegrationsRegistry
             showAgentSelector={true}

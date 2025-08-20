@@ -10,10 +10,14 @@ const fetchAgentTriggers = async (agentId: string): Promise<TriggerConfiguration
     if (!session) {
         throw new Error('You must be logged in to create a trigger');
     }
-    const response = await fetch(`${API_URL}/triggers/agents/${agentId}/triggers`, {
+    const response = await fetch(`${API_URL}/api/triggers/agents/${agentId}/triggers`, {
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
   });
   if (!response.ok) {
+    // Handle 403 gracefully by returning empty array
+    if (response.status === 403) {
+      return [];
+    }
     throw new Error('Failed to fetch agent triggers');
   }
   return response.json();
@@ -31,7 +35,7 @@ const createTrigger = async (data: {
     if (!session) {
         throw new Error('You must be logged in to create a trigger');
     }
-    const response = await fetch(`${API_URL}/triggers/agents/${data.agentId}/triggers`, {
+    const response = await fetch(`${API_URL}/api/triggers/agents/${data.agentId}/triggers`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
     body: JSON.stringify({
@@ -62,7 +66,7 @@ const updateTrigger = async (data: {
     if (!session) {
         throw new Error('You must be logged in to create a trigger');
     }
-    const response = await fetch(`${API_URL}/triggers/${data.triggerId}`, {
+    const response = await fetch(`${API_URL}/api/triggers/${data.triggerId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
     body: JSON.stringify({
