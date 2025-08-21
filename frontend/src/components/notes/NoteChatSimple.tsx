@@ -14,9 +14,7 @@ import { toast } from 'sonner';
 // Configure marked
 marked.setOptions({
   breaks: true,
-  gfm: true,
-  headerIds: false,
-  mangle: false
+  gfm: true
 });
 
 interface Message {
@@ -253,7 +251,7 @@ export function NoteChatSimple({
               // If in edit mode, apply the content to the note
               if (editEnabled && accumulatedContent && onContentUpdate) {
                 // Parse the markdown to HTML for the editor
-                const htmlContent = marked.parse(accumulatedContent);
+                const htmlContent = marked.parse(accumulatedContent) as string;
                 
                 if (selectedContent && editor) {
                   // Replace only the selected content
@@ -330,7 +328,7 @@ export function NoteChatSimple({
   if (!isVisible) return null;
 
   return (
-    <div className={cn('w-full pl-1.5 pr-2.5 pt-2 bg-white dark:shadow-lg dark:bg-gray-850 z-40 pointer-events-auto overflow-y-auto scrollbar-hidden flex flex-col', className)}>
+    <div className={cn('w-full pl-1.5 pr-2.5 pt-2 bg-card/50 backdrop-blur-sm border-l border-border/50 z-40 pointer-events-auto overflow-y-auto scrollbar-hidden flex flex-col', className)}>
       {/* Header */}
       <div className="flex items-center mb-1.5 pt-1.5">
         <div className="-translate-x-1.5 flex items-center">

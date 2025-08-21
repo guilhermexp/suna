@@ -43,7 +43,6 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { useSingleNote, type Note } from '@/hooks/useNotes';
 import { toast } from 'sonner';
 import { type FileAttachment, getNoteAttachments } from '@/lib/supabase/storage';
-import { uploadAudioForTranscription } from '@/lib/api/transcription';
 import { runAgentTool } from '@/lib/api/agent_tools';
 import { chatCompletion } from '@/lib/apis/openai';
 import { splitStream } from '@/lib/utils/stream';
@@ -51,27 +50,10 @@ import { marked } from 'marked';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github-dark.css';
 
-// Configure marked with highlight.js for code blocks
+// Configure marked for markdown parsing
 marked.setOptions({
   breaks: true,
-  gfm: true,
-  headerIds: false,
-  mangle: false,
-  highlight: function(code, lang) {
-    if (lang && hljs.getLanguage(lang)) {
-      try {
-        return hljs.highlight(code, { language: lang }).value;
-      } catch (err) {
-        console.error('Highlight error:', err);
-      }
-    }
-    try {
-      return hljs.highlightAuto(code).value;
-    } catch (err) {
-      console.error('Highlight auto error:', err);
-    }
-    return code;
-  }
+  gfm: true
 });
 
 // TipTap editor imports
@@ -125,7 +107,7 @@ lowlight.register('sql', sql);
 import { EditorToolbar } from './EditorToolbar';
 
 // YouTube components
-import { YouTubePreviewHandler } from './YouTubePreviewHandler';
+import { YouTubePreviewHandler, YouTubePreviewHandlerRef } from './YouTubePreviewHandler';
 import { YouTubeTranscriptExtractor } from './YouTubeTranscriptExtractor';
 
 // Chat component
@@ -177,13 +159,23 @@ export function NoteEditor({
   const [messageCount, setMessageCount] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const chatRef = useRef<any>(null);
+  const youtubePreviewRef = useRef<YouTubePreviewHandlerRef>(null);
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   
   // Panel state management
   const [showPanel, setShowPanel] = useState(false);
   const [selectedPanel, setSelectedPanel] = useState<'chat' | 'controls'>('chat');
-  const [controlFiles, setControlFiles] = useState<any[]>([]);
+  const [controlFiles, setControlFiles] = useState<{
+    id: string;
+    name: string;
+    size: number;
+    type: string;
+    file?: File;
+    status: 'uploading' | 'ready';
+    content?: string;
+    metadata?: any;
+  }[]>([]);
   const [selectedModelId, setSelectedModelId] = useState('gpt-4o');
   const [selectedContent, setSelectedContent] = useState<{ text: string; from: number; to: number } | null>(null);
 
@@ -268,7 +260,7 @@ export function NoteEditor({
       
       saveTimeoutRef.current = setTimeout(() => {
         handleAutoSave(editor);
-      }, 3000); // 3 seconds debounce - more reasonable
+      }, 5000); // 5 seconds - more natural, gives time to think and type
     },
     onSelectionUpdate: ({ editor }) => {
       const { from, to } = editor.state.selection;
@@ -340,7 +332,7 @@ export function NoteEditor({
       const readingTime = Math.ceil(wordCount / 200); // Assuming 200 WPM reading speed
 
       await updateNote({
-        title: title || 'Untitled',
+        title: title || '', // Let it be empty if user hasn't typed
         content,
         content_text: text,
         word_count: wordCount,
@@ -352,7 +344,7 @@ export function NoteEditor({
       if (onSave && note) {
         onSave({
           ...note,
-          title: title || 'Untitled',
+          title: title || '', // Let it be empty if user hasn't typed
           content,
           content_text: text,
           word_count: wordCount,
@@ -373,9 +365,16 @@ export function NoteEditor({
     }
   }, [editor, handleAutoSave]);
 
-  // Save on title change
+  // Save on title change - but only when user actually types
   useEffect(() => {
-    if (note && title !== note.title) {
+    // Skip if title is empty or "Untitled" (default values)
+    if (!title || title === 'Untitled') return;
+    
+    // Skip if this is the initial load (title is being set from the note)
+    if (note && title === note.title) return;
+    
+    // Only save if user has typed something meaningful
+    if (note && title.length > 0 && title !== note.title) {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
@@ -384,7 +383,7 @@ export function NoteEditor({
         if (editor) {
           handleAutoSave(editor);
         }
-      }, 1000);
+      }, 2000); // Give user more time to type
     }
   }, [title, note, editor, handleAutoSave]);
 
@@ -640,7 +639,7 @@ export function NoteEditor({
     // Get current note content FIRST to check for YouTube links
     const noteContent = editor?.getHTML() || '';
     const noteText = editor?.getText() || '';
-    const noteMarkdown = editor?.storage.markdown?.getMarkdown() || noteText;
+    const noteMarkdown = noteText; // Use text content directly
     
     console.log('Editor content for YouTube detection:', {
       noteText: noteText,
@@ -745,14 +744,17 @@ IMPORTANT:
 # Output Format
 
 Provide the enhanced notes in markdown format IN BRAZILIAN PORTUGUESE. The structure should be:
-1. Keep any YouTube URLs exactly where they appear
-2. Add enhanced content after each URL
-3. Use markdown syntax for headings, lists, task lists, and emphasis
-4. All text must be in Brazilian Portuguese
+1. FIRST LINE MUST BE: TITLE: [Create a descriptive title that captures the main topic]
+2. Keep any YouTube URLs exactly where they appear
+3. Add enhanced content after each URL
+4. Use markdown syntax for headings, lists, task lists, and emphasis
+5. All text must be in Brazilian Portuguese
 
 Example:
 If the input has: https://www.youtube.com/watch?v=abc123
 Output should be:
+TITLE: Tutorial Completo de React com Hooks
+
 https://www.youtube.com/watch?v=abc123
 
 ## Resumo do Vídeo
@@ -858,7 +860,7 @@ https://www.youtube.com/watch?v=abc123
                       
                       // Parse markdown safely
                       try {
-                        enhancedContent.html = marked.parse(enhancedContent.md);
+                        enhancedContent.html = marked.parse(enhancedContent.md) as string;
                       } catch (markdownError) {
                         console.error('Markdown parsing error:', markdownError);
                         // Fallback to raw markdown if parsing fails
@@ -869,10 +871,26 @@ https://www.youtube.com/watch?v=abc123
                       
                       // Update editor content in real-time
                       if (editor && enhancedContent.html) {
-                        editor.commands.setContent(enhancedContent.html);
+                        // Check if content starts with "TITLE:" and extract it
+                        const titleMatch = enhancedContent.md.match(/^TITLE:\s*(.+?)(\n|$)/i);
+                        if (titleMatch) {
+                          const extractedTitle = titleMatch[1].trim();
+                          setTitle(extractedTitle);
+                          
+                          // Remove the TITLE: line from the content
+                          const contentWithoutTitle = enhancedContent.md.replace(/^TITLE:\s*(.+?)(\n|$)/i, '').trim();
+                          const htmlWithoutTitle = marked.parse(contentWithoutTitle) as string;
+                          editor.commands.setContent(htmlWithoutTitle);
+                        } else {
+                          editor.commands.setContent(enhancedContent.html);
+                        }
                         
                         // Trigger YouTube preview processing after content update
                         setTimeout(() => {
+                          // Process YouTube links to add previews
+                          if (youtubePreviewRef.current) {
+                            youtubePreviewRef.current.processLinks();
+                          }
                           editor.commands.focus();
                         }, 100);
                       }
@@ -895,8 +913,20 @@ https://www.youtube.com/watch?v=abc123
         }
       }
       
-      // After streaming completes, save the note with the enhanced content
+      // After streaming completes, check for title one more time and save
       if (editor && !editor.isDestroyed) {
+        // Extract title from the final content if it exists
+        const editorText = editor.getText();
+        const titleMatch = editorText.match(/^TITLE:\s*(.+?)(\n|$)/i);
+        if (titleMatch) {
+          const extractedTitle = titleMatch[1].trim();
+          setTitle(extractedTitle);
+          
+          // Remove the TITLE: line from the editor
+          const contentWithoutTitle = editorText.replace(/^TITLE:\s*(.+?)(\n|$)/i, '').trim();
+          editor.commands.setContent(contentWithoutTitle);
+        }
+        
         // Give TipTap a moment to process the HTML and update its internal state
         setTimeout(() => {
           handleAutoSave(editor);
@@ -933,6 +963,13 @@ https://www.youtube.com/watch?v=abc123
       await enhanceCompletionHandler(selectedModel);
       
       toast.success('✅ Note enhanced successfully!');
+    
+    // Process YouTube links after enhancement is complete
+    setTimeout(() => {
+      if (youtubePreviewRef.current) {
+        youtubePreviewRef.current.processLinks();
+      }
+    }, 200);
     } catch (error) {
       console.error('Enhancement error:', error);
       toast.error('Failed to enhance note. Please try again.');
@@ -1047,7 +1084,16 @@ https://www.youtube.com/watch?v=abc123
       const files = (event.target as HTMLInputElement).files;
       if (files) {
         for (const file of Array.from(files)) {
-          const fileInfo = {
+          const fileInfo: {
+            id: string;
+            name: string;
+            size: number;
+            type: string;
+            file?: File;
+            status: 'uploading' | 'ready';
+            content?: string;
+            metadata?: any;
+          } = {
             id: `file-${Date.now()}-${Math.random()}`,
             name: file.name,
             size: file.size,
@@ -1419,10 +1465,10 @@ https://www.youtube.com/watch?v=abc123
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 flex overflow-hidden relative h-full">
         {/* Editor */}
         <div className={cn(
-          "flex-1 overflow-y-auto overflow-x-hidden transition-all duration-300",
+          "flex-1 overflow-y-auto overflow-x-hidden transition-all duration-300 h-full",
           showPanel && enableChat ? "mr-0" : ""
         )}>
           <div className="h-full w-full max-w-full p-3 sm:p-4 md:p-6 pb-16 sm:pb-20 overflow-x-hidden relative">
@@ -1472,7 +1518,7 @@ https://www.youtube.com/watch?v=abc123
             />
             
             {/* YouTube Preview Handler */}
-            {editor && <YouTubePreviewHandler editor={editor} />}
+            {editor && <YouTubePreviewHandler ref={youtubePreviewRef} editor={editor} />}
             
             {/* Attachments Section */}
             {attachments.length > 0 && (
@@ -1484,45 +1530,45 @@ https://www.youtube.com/watch?v=abc123
                 />
               </div>
             )}
-          </div>
-          
-          {/* Floating Action Buttons - Fixed position relative to editor */}
-          {/* Record Menu - Bottom Left */}
-          <div className="absolute bottom-4 left-4 z-40">
-            <RecordMenu
-              onRecord={handleRecord}
-              onCaptureAudio={handleCaptureAudio}
-              onUpload={handleUploadAudio}
-            >
-              <Button
-                size="icon"
-                className="h-10 w-10 sm:h-12 sm:w-12 rounded-full shadow-md hover:shadow-lg transition-all hover:scale-105 bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+            
+            {/* Floating Action Buttons - Fixed position relative to editor content */}
+            {/* Record Menu - Bottom Left */}
+            <div className="absolute bottom-6 left-6 z-40">
+              <RecordMenu
+                onRecord={handleRecord}
+                onCaptureAudio={handleCaptureAudio}
+                onUpload={handleUploadAudio}
               >
-                <Mic className="h-4 w-4 sm:h-5 sm:w-5" />
-              </Button>
-            </RecordMenu>
-          </div>
+                <Button
+                  size="icon"
+                  className="h-10 w-10 sm:h-12 sm:w-12 rounded-full shadow-md hover:shadow-lg transition-all hover:scale-105 bg-card/50 backdrop-blur-sm text-foreground border border-border/50 hover:bg-accent hover:text-accent-foreground"
+                >
+                  <Mic className="h-4 w-4 sm:h-5 sm:w-5" />
+                </Button>
+              </RecordMenu>
+            </div>
 
-          {/* AI Menu - Bottom Right */}
-          <div className="absolute bottom-4 right-4 z-40 transition-all duration-300">
-            <AIMenu
-              onEnhance={handleEnhance}
-              onSummarize={handleSummarize}
-              onCorrectGrammar={handleCorrectGrammar}
-              onExpand={handleExpand}
-              onChat={handleAIChat}
-              onYouTube={handleYouTube}
-              onFileUpload={handleFileUpload}
-              onSimplify={handleSimplify}
-              onTranslate={handleTranslate}
-            >
-              <Button
-                size="icon"
-                className="h-10 w-10 sm:h-12 sm:w-12 rounded-full shadow-md hover:shadow-lg transition-all hover:scale-105 bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+            {/* AI Menu - Bottom Right */}
+            <div className="absolute bottom-6 right-6 z-40 transition-all duration-300">
+              <AIMenu
+                onEnhance={handleEnhance}
+                onSummarize={handleSummarize}
+                onCorrectGrammar={handleCorrectGrammar}
+                onExpand={handleExpand}
+                onChat={handleAIChat}
+                onYouTube={handleYouTube}
+                onFileUpload={handleFileUpload}
+                onSimplify={handleSimplify}
+                onTranslate={handleTranslate}
               >
-                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
-              </Button>
-            </AIMenu>
+                <Button
+                  size="icon"
+                  className="h-10 w-10 sm:h-12 sm:w-12 rounded-full shadow-md hover:shadow-lg transition-all hover:scale-105 bg-card/50 backdrop-blur-sm text-foreground border border-border/50 hover:bg-accent hover:text-accent-foreground"
+                >
+                  <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
+                </Button>
+              </AIMenu>
+            </div>
           </div>
 
           {/* Voice Recording Component */}
@@ -1545,7 +1591,7 @@ https://www.youtube.com/watch?v=abc123
         {/* Side Panel - Chat or Controls */}
         {enableChat && (
           <div className={cn(
-            "transition-all duration-300 ease-in-out border-l bg-background",
+            "transition-all duration-300 ease-in-out border-l bg-background h-full",
             showPanel ? "w-full sm:w-80 md:w-96 absolute sm:relative inset-0 sm:inset-auto" : "w-0 overflow-hidden"
           )}>
             {showPanel && selectedPanel === 'chat' && (

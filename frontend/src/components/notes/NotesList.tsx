@@ -56,6 +56,7 @@ export function NotesList({
   const [currentViewMode, setCurrentViewMode] = useState(viewMode);
   const [showArchived, setShowArchived] = useState(false);
   const [onlyStarred, setOnlyStarred] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 
   const {
     notes,
@@ -317,72 +318,130 @@ export function NotesList({
             </p>
           </div>
         ) : currentViewMode === 'list' ? (
-          // List mode - compact view
-          <div className="space-y-1">
-            {filteredNotes.map((note) => (
-              <div
-                key={note.id}
-                className={cn(
-                  "p-3 cursor-pointer hover:bg-accent/50 transition-colors border-b",
-                  selectedNoteId === note.id && "bg-accent"
-                )}
-                onClick={() => onNoteSelect?.(note)}
-              >
-                <div className="flex items-start justify-between mb-1">
-                  <h4 className="font-medium text-sm line-clamp-1 flex-1">
-                    {note.title || 'Untitled'}
-                  </h4>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="h-5 w-5 p-0 opacity-0 hover:opacity-100 focus:opacity-100"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreHorizontal className="h-3 w-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleStar(note.id, note.is_starred);
-                      }}>
-                        <Star className="h-3 w-3 mr-2" />
-                        {note.is_starred ? 'Unstar' : 'Star'}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleArchive(note.id, note.is_archived);
-                      }}>
-                        <Archive className="h-3 w-3 mr-2" />
-                        {note.is_archived ? 'Unarchive' : 'Archive'}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteNote(note.id);
-                        }}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="h-3 w-3 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-                <p className="text-xs text-muted-foreground line-clamp-2 mb-1">
-                  {note.content_text || 'No content'}
-                </p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  {note.is_starred && (
-                    <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                  )}
-                  <span>{formatDistanceToNow(new Date(note.updated_at), { addSuffix: true })}</span>
-                </div>
+          // List mode with sidebar preview
+          <div className="flex h-full gap-4">
+            {/* Notes List Column */}
+            <div className="w-1/2 overflow-y-auto border-r border-border/20 pr-4">
+              <div className="space-y-0.5">
+                {filteredNotes.map((note) => (
+                  <div
+                    key={note.id}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-accent/10 rounded-lg transition-colors",
+                      (selectedNote?.id === note.id || selectedNoteId === note.id) && "bg-accent/20"
+                    )}
+                    onClick={() => {
+                      setSelectedNote(note);
+                      onNoteSelect?.(note);
+                    }}
+                  >
+                    {/* Icon/Emoji */}
+                    <div className="flex-shrink-0 text-xl">
+                      {'📝'}
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-sm text-foreground line-clamp-1">
+                        {note.title || 'Untitled'}
+                      </h4>
+                      <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                        {note.content_text || 'No content'}
+                      </p>
+                    </div>
+                    
+                    {/* Metadata */}
+                    <div className="flex flex-col items-end gap-0.5 text-xs text-muted-foreground flex-shrink-0">
+                      <span>{formatDistanceToNow(new Date(note.updated_at), { addSuffix: true })}</span>
+                      <span className="text-[10px]">Por KortixAI</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+            
+            {/* Preview Column */}
+            <div className="w-1/2 overflow-y-auto">
+              {selectedNote || filteredNotes[0] ? (
+                <div className="p-4">
+                  {/* Note Header */}
+                  <div className="mb-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <h2 className="text-2xl font-bold text-foreground">
+                        {(selectedNote || filteredNotes[0])?.title || 'Untitled'}
+                      </h2>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onNoteEdit?.((selectedNote || filteredNotes[0])?.id)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => {
+                              const note = selectedNote || filteredNotes[0];
+                              if (note) handleToggleStar(note.id, note.is_starred);
+                            }}>
+                              <Star className="h-4 w-4 mr-2" />
+                              {(selectedNote || filteredNotes[0])?.is_starred ? 'Unstar' : 'Star'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {
+                              const note = selectedNote || filteredNotes[0];
+                              if (note) handleToggleArchive(note.id, note.is_archived);
+                            }}>
+                              <Archive className="h-4 w-4 mr-2" />
+                              {(selectedNote || filteredNotes[0])?.is_archived ? 'Unarchive' : 'Archive'}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                const note = selectedNote || filteredNotes[0];
+                                if (note) handleDeleteNote(note.id);
+                              }}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                    
+                    {/* Note Metadata */}
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>Canal: Asimov Academy</span>
+                    </div>
+                  </div>
+                  
+                  {/* Note Content */}
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">Descrição do Vídeo</h3>
+                        <div className="text-muted-foreground whitespace-pre-wrap">
+                          {(selectedNote || filteredNotes[0])?.content_text || 'No content available'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  <div className="text-center">
+                    <FileText className="h-12 w-12 mx-auto mb-2" />
+                    <p>Select a note to preview</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           // Grid mode - cards view
@@ -400,81 +459,117 @@ export function NotesList({
                     <Card 
                       key={note.id}
                       className={cn(
-                        "cursor-pointer transition-all hover:shadow-md",
-                        "h-[120px] overflow-hidden",
-                        selectedNoteId === note.id && "ring-2 ring-primary",
+                        "cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] group",
+                        "min-h-[200px] overflow-hidden bg-card/50 backdrop-blur-sm",
+                        selectedNoteId === note.id && "ring-2 ring-primary shadow-lg",
                         note.is_archived && "opacity-60"
                       )}
                       onClick={() => onNoteSelect?.(note)}
                     >
-                      <div className="p-3 h-full flex flex-col">
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="text-sm font-semibold line-clamp-1 flex-1">
-                            {note.title || 'Untitled'}
-                          </h4>
-                          <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                      <div className="p-4 h-full flex flex-col">
+                        {/* Header with title and actions */}
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1 min-w-0">
+                            {/* Emoji or icon */}
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xl">
+                                {'📝'}
+                              </span>
+                              <h4 className="text-base font-bold line-clamp-2 text-foreground">
+                                {note.title || 'Untitled Note'}
+                              </h4>
+                            </div>
+                          </div>
+                          
+                          {/* More options button */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation();
+                                onNoteEdit?.(note.id);
+                              }}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                Open
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleStar(note.id, note.is_starred);
+                              }}>
+                                <Star className="h-4 w-4 mr-2" />
+                                {note.is_starred ? 'Unstar' : 'Star'}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleArchive(note.id, note.is_archived);
+                              }}>
+                                <Archive className="h-4 w-4 mr-2" />
+                                {note.is_archived ? 'Unarchive' : 'Archive'}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteNote(note.id);
+                                }}
+                                className="text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        
+                        {/* Content preview */}
+                        <p className="text-sm text-muted-foreground line-clamp-3 flex-1 mb-4 leading-relaxed">
+                          {formatContent(note.content, note.content_text)}
+                        </p>
+                        
+                        {/* Tags if available - commented out as Note doesn't have tags property
+                        {note.tags && note.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {note.tags.slice(0, 3).map(tag => (
+                              <Badge key={tag} variant="secondary" className="text-xs px-2 py-0.5">
+                                #{tag}
+                              </Badge>
+                            ))}
+                            {note.tags.length > 3 && (
+                              <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                                +{note.tags.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                        */}
+                        
+                        {/* Footer with metadata */}
+                        <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto pt-3 border-t border-border/50">
+                          <div className="flex items-center gap-2">
                             {note.is_starred && (
                               <Star className="h-3 w-3 text-yellow-500 fill-current" />
                             )}
                             {note.is_archived && (
-                              <Archive className="h-3 w-3 text-muted-foreground" />
+                              <Archive className="h-3 w-3" />
                             )}
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  className="h-5 w-5 p-0"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <MoreHorizontal className="h-3 w-3" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={(e) => {
-                                  e.stopPropagation();
-                                  onNoteEdit?.(note.id);
-                                }}>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Open
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleToggleStar(note.id, note.is_starred);
-                                }}>
-                                  <Star className="h-4 w-4 mr-2" />
-                                  {note.is_starred ? 'Unstar' : 'Star'}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleToggleArchive(note.id, note.is_archived);
-                                }}>
-                                  <Archive className="h-4 w-4 mr-2" />
-                                  {note.is_archived ? 'Unarchive' : 'Archive'}
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteNote(note.id);
-                                  }}
-                                  className="text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <span className="font-medium">
+                              {formatDistanceToNow(new Date(note.updated_at), { addSuffix: true })}
+                            </span>
                           </div>
-                        </div>
-                        
-                        <p className="text-xs text-muted-foreground line-clamp-3 flex-1 overflow-hidden">
-                          {formatContent(note.content, note.content_text)}
-                        </p>
-                        
-                        <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-auto pt-2">
-                          <span>{formatDistanceToNow(new Date(note.updated_at), { addSuffix: true })}</span>
-                          <span>Por {note.author_name || 'Unknown'}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px]">
+                              By Guilherme-varela@hotmail.com
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </Card>

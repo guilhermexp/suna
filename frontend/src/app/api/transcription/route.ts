@@ -14,6 +14,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('Received file:', {
+      name: file.name,
+      type: file.type,
+      size: file.size
+    });
+
     // Get OpenAI API key from environment variables
     const apiKey = process.env.OPENAI_API_KEY;
     
@@ -25,9 +31,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Ensure file has proper extension
+    let fileName = file.name || 'audio.mp3';
+    
+    // Handle WhatsApp opus files - convert to .ogg extension
+    if (fileName.endsWith('.opus')) {
+      fileName = fileName.replace('.opus', '.ogg');
+    }
+    
+    if (!fileName.includes('.')) {
+      // Add extension based on mime type
+      const ext = file.type?.split('/')[1] || 'mp3';
+      fileName = `audio.${ext}`;
+    }
+    
+    // Convert the File to a Blob with correct type
+    const buffer = await file.arrayBuffer();
+    const audioType = file.type || 'audio/mpeg';
+    const blob = new Blob([buffer], { type: audioType });
+    
+    console.log('Sending to OpenAI:', {
+      fileName,
+      audioType,
+      size: blob.size
+    });
+    
     // Create FormData for OpenAI API
     const openAIFormData = new FormData();
-    openAIFormData.append('file', file);
+    openAIFormData.append('file', blob, fileName);
     openAIFormData.append('model', 'whisper-1');
     
     // Add language if specified
@@ -53,6 +84,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { 
           error: 'Transcription failed', 
+          detail: errorData.error?.message || 'Unknown error',
           details: errorData.error?.message || 'Unknown error' 
         },
         { status: response.status }

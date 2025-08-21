@@ -13,7 +13,6 @@ import {
 import { cn } from '@/lib/utils';
 import { FileItem } from './FileItem';
 import { toast } from 'sonner';
-import { uploadAudioForTranscription } from '@/lib/api/transcription';
 import { runAgentTool } from '@/lib/api/agent_tools';
 
 interface AudioFile {
@@ -86,10 +85,28 @@ export function NoteControls({
       for (const file of localFiles) {
         if (file.file && file.type === 'audio') {
           toast.info(`Transcribing ${file.name}...`);
-          const result = await uploadAudioForTranscription(file.file);
           
-          if (result?.text) {
-            transcriptions.push(result.text);
+          // Use the same logic as VoiceRecording
+          const formData = new FormData();
+          formData.append('file', file.file);
+          
+          try {
+            const response = await fetch('/api/transcription', {
+              method: 'POST',
+              body: formData
+            });
+            
+            if (!response.ok) {
+              throw new Error('Transcription failed');
+            }
+            
+            const data = await response.json();
+            if (data.text) {
+              transcriptions.push(data.text);
+            }
+          } catch (error) {
+            console.error('Transcription error:', error);
+            toast.error(`Failed to transcribe ${file.name}`);
           }
         } else if (file.transcription) {
           transcriptions.push(file.transcription);
@@ -104,46 +121,14 @@ export function NoteControls({
       // Combine all transcriptions
       const combinedText = transcriptions.join('\n\n');
       
-      // Enhance the text using AI
-      if (noteId) {
-        toast.info('Enhancing text...');
-        const enhanced = await runAgentTool(
-          noteId,
-          'text_enhancement_tool.rephrase_text',
-          { text: combinedText, style: 'professional' }
-        );
+      // Send raw transcription to editor (no enhancement)
+      if (onProcessAudio) {
+        onProcessAudio(combinedText);
+        toast.success('Transcription added to editor!');
         
-        if (enhanced?.success && enhanced.output) {
-          // Send enhanced text to editor
-          if (onProcessAudio) {
-            onProcessAudio(enhanced.output);
-            toast.success('Text enhanced and added to editor!');
-            
-            // Clear files after processing
-            setLocalFiles([]);
-            onUpdate([]);
-          }
-        } else {
-          // Fallback to original transcription
-          if (onProcessAudio) {
-            onProcessAudio(combinedText);
-            toast.success('Transcription added to editor!');
-            
-            // Clear files after processing
-            setLocalFiles([]);
-            onUpdate([]);
-          }
-        }
-      } else {
-        // No noteId, just send transcription
-        if (onProcessAudio) {
-          onProcessAudio(combinedText);
-          toast.success('Transcription added to editor!');
-          
-          // Clear files after processing
-          setLocalFiles([]);
-          onUpdate([]);
-        }
+        // Clear files after processing
+        setLocalFiles([]);
+        onUpdate([]);
       }
     } catch (error) {
       console.error('Error processing audio:', error);
@@ -208,7 +193,7 @@ export function NoteControls({
                         alt={file.name}
                       />
                       <button
-                        className="absolute -top-1 -right-1 bg-white text-black border border-gray-50 rounded-full p-0.5"
+                        className="absolute -top-1 -right-1 bg-card text-foreground border border-border rounded-full p-0.5 hover:bg-accent hover:text-accent-foreground transition"
                         onClick={() => handleRemoveFile(file.id)}
                       >
                         <X className="h-3 w-3" />

@@ -20,16 +20,16 @@ export function RecordMenu({ onRecord, onCaptureAudio, onUpload, children }: Rec
       <DropdownMenuTrigger asChild>
         {children}
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-[170px] text-sm rounded-xl px-1 py-1.5 z-50 bg-white dark:bg-gray-850 dark:text-white shadow-lg font-primary" sideOffset={8} side="bottom" align="start">
-        <DropdownMenuItem onClick={() => { onRecord(); setOpen(false); }} className="flex rounded-md py-1.5 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+      <DropdownMenuContent className="w-[170px] text-sm rounded-xl px-1 py-1.5 z-50 bg-card/95 backdrop-blur-sm text-foreground border border-border/50 shadow-lg font-primary" sideOffset={8} side="bottom" align="start">
+        <DropdownMenuItem onClick={() => { onRecord(); setOpen(false); }} className="flex rounded-md py-1.5 px-3 w-full hover:bg-accent hover:text-accent-foreground transition">
           <Mic className="size-4 mr-2" strokeWidth={2} />
           <span>Record</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => { onCaptureAudio(); setOpen(false); }} className="flex rounded-md py-1.5 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+        <DropdownMenuItem onClick={() => { onCaptureAudio(); setOpen(false); }} className="flex rounded-md py-1.5 px-3 w-full hover:bg-accent hover:text-accent-foreground transition">
           <FileAudio className="size-4 mr-2" strokeWidth={2} />
           <span>Capture Audio</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => { onUpload(); setOpen(false); }} className="flex rounded-md py-1.5 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+        <DropdownMenuItem onClick={() => { onUpload(); setOpen(false); }} className="flex rounded-md py-1.5 px-3 w-full hover:bg-accent hover:text-accent-foreground transition">
           <ArrowUpFromLine className="size-4 mr-2" strokeWidth={2} />
           <span>Upload Audio</span>
         </DropdownMenuItem>

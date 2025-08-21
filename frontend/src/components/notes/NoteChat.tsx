@@ -29,9 +29,7 @@ import './NoteChat.css';
 // Configure marked with simpler settings
 marked.setOptions({
   breaks: true,
-  gfm: true,
-  headerIds: false,
-  mangle: false
+  gfm: true
 });
 
 interface NoteChatProps {
@@ -318,7 +316,7 @@ export const NoteChat = forwardRef<any, NoteChatProps>(({
                     setStreaming(true);
 
                     enhancedContent.md += deltaContent;
-                    enhancedContent.html = marked.parse(enhancedContent.md);
+                    enhancedContent.html = marked.parse(enhancedContent.md) as string;
 
                     if (!selectedContent || !selectedContent?.text) {
                       if (note && onContentUpdate) {
@@ -431,7 +429,7 @@ export const NoteChat = forwardRef<any, NoteChatProps>(({
   }
 
   return (
-    <div className={cn('w-full pl-1.5 pr-2.5 pt-2 bg-white dark:shadow-lg dark:bg-gray-850 z-40 pointer-events-auto overflow-y-auto scrollbar-hidden flex flex-col', className)}>
+    <div className={cn('w-full pl-1.5 pr-2.5 pt-2 bg-card/50 backdrop-blur-sm border-l border-border/50 z-40 pointer-events-auto overflow-y-auto scrollbar-hidden flex flex-col', className)}>
       {/* Header */}
       <div className="flex items-center mb-1.5 pt-1.5">
         <div className="-translate-x-1.5 flex items-center">

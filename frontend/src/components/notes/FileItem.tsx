@@ -45,7 +45,7 @@ function decodeString(str: string): string {
 
 export function FileItem({
   className = 'w-60',
-  colorClassName = 'bg-white dark:bg-gray-850 border border-gray-50 dark:border-white/5',
+  colorClassName = 'bg-card/50 backdrop-blur-sm border border-border/50',
   url = null,
   dismissible = false,
   modal = false,
@@ -79,7 +79,7 @@ export function FileItem({
   const content = (
     <>
       {!small && (
-        <div className="p-3 bg-black/20 dark:bg-white/10 text-white rounded-xl">
+        <div className="p-3 bg-accent/20 text-accent-foreground rounded-xl">
           {!loading ? (
             <File className="h-5 w-5" />
           ) : (
@@ -127,24 +127,17 @@ export function FileItem({
     </>
   );
 
-  const button = (
-    <button
-      className={cn(
-        "relative group p-1.5 flex items-center gap-1 text-left",
-        small ? 'rounded-xl' : 'rounded-2xl',
-        className,
-        colorClassName
-      )}
-      type="button"
-      onClick={handleClick}
-    >
+  const buttonContent = (
+    <>
       {content}
-
       {dismissible && (
-        <div className="absolute -top-1 -right-1">
+        <div 
+          className="absolute -top-1 -right-1"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
             aria-label="Remove File"
-            className="bg-white text-black border border-gray-50 rounded-full p-0.5 outline-hidden focus:outline-hidden group-hover:visible invisible transition"
+            className="bg-card text-foreground border border-border rounded-full p-0.5 outline-hidden focus:outline-hidden group-hover:visible invisible transition hover:bg-accent hover:text-accent-foreground"
             type="button"
             onClick={(e) => {
               e.stopPropagation();
@@ -155,6 +148,41 @@ export function FileItem({
           </button>
         </div>
       )}
+    </>
+  );
+
+  const button = dismissible ? (
+    <div
+      className={cn(
+        "relative group p-1.5 flex items-center gap-1 text-left cursor-pointer",
+        small ? 'rounded-xl' : 'rounded-2xl',
+        className,
+        colorClassName
+      )}
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
+    >
+      {buttonContent}
+    </div>
+  ) : (
+    <button
+      className={cn(
+        "relative group p-1.5 flex items-center gap-1 text-left",
+        small ? 'rounded-xl' : 'rounded-2xl',
+        className,
+        colorClassName
+      )}
+      type="button"
+      onClick={handleClick}
+    >
+      {buttonContent}
     </button>
   );
 
