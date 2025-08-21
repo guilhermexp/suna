@@ -160,7 +160,12 @@ api_router = APIRouter()
 # Include all API routers without individual prefixes
 api_router.include_router(agent_api.router)
 api_router.include_router(sandbox_api.router)
-api_router.include_router(billing_api.router)
+
+# Only include billing if not self-hosted
+import os
+if os.getenv('SELF_HOSTED', 'false').lower() != 'true':
+    api_router.include_router(billing_api.router)
+    
 api_router.include_router(feature_flags_api.router)
 api_router.include_router(api_keys_api.router)
 
