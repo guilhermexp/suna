@@ -24,7 +24,7 @@ class BrowserTool(SandboxToolsBase):
     - browser_extract_content: Extract content from pages
     - browser_screenshot: Take screenshots
     """
-    _sandbox_created = False
+
 
     def __init__(self, project_id: str, thread_id: str, thread_manager: ThreadManager):
         super().__init__(project_id, thread_manager)
@@ -134,11 +134,7 @@ class BrowserTool(SandboxToolsBase):
         """Check if the Stagehand API server is running and accessible"""
         try:
             await self._ensure_sandbox()
-
-            if not self.__class__._sandbox_created:
-                logger.info("Sandbox just created, waiting for server to start")
-                await asyncio.sleep(5)
-                self.__class__._sandbox_created = True
+            
             
             # Simple health check curl command
             curl_cmd = "curl -s -X GET 'http://localhost:8004/api' -H 'Content-Type: application/json'"
@@ -150,15 +146,15 @@ class BrowserTool(SandboxToolsBase):
                 try:
                     result = json.loads(response.result)
                     if result.get("status") == "healthy":
-                        logger.info("✅ Stagehand API server is running and healthy")
+                        logger.debug("✅ Stagehand API server is running and healthy")
                         return True
                     else:
                         # If the browser api is not healthy, we need to restart the browser api
-                        model_api_key = config.ANTHROPIC_API_KEY
+                        model_api_key = config.OPENAI_API_KEY
 
                         response = await self.sandbox.process.exec(f"curl -X POST 'http://localhost:8004/api/init' -H 'Content-Type: application/json' -d '{{\"api_key\": \"{model_api_key}\"}}'", timeout=90)
                         if response.exit_code == 0:
-                            logger.info("Stagehand API server restarted successfully")
+                            logger.debug("Stagehand API server restarted successfully")
                             return True
                         else:
                             logger.warning(f"Stagehand API server restart failed: {response.result}")
@@ -214,9 +210,9 @@ class BrowserTool(SandboxToolsBase):
             if response.exit_code == 0:
                 try:
                     result = json.loads(response.result)
-                    logger.info(f"Stagehand API result: {result}")
+                    logger.debug(f"Stagehand API result: {result}")
 
-                    logger.info("Stagehand API request completed successfully")
+                    logger.debug("Stagehand API request completed successfully")
 
                     if "screenshot_base64" in result:
                         try:
@@ -237,7 +233,8 @@ class BrowserTool(SandboxToolsBase):
                         except Exception as e:
                             logger.error(f"Failed to process screenshot: {e}")
                             result["image_upload_error"] = str(e)
-
+                    
+                    result["input"] = params
                     added_message = await self.thread_manager.add_message(
                         thread_id=self.thread_id,
                         type="browser_state",
@@ -267,14 +264,13 @@ class BrowserTool(SandboxToolsBase):
                         clean_result["screenshot_issue"] = f"Screenshot processing issue: {result['image_validation_error']}"
                     if result.get("image_upload_error"):
                         clean_result["screenshot_issue"] = f"Screenshot upload issue: {result['image_upload_error']}"
+                    clean_result["message_id"] = added_message.get("message_id")
 
                     if clean_result.get("success"):
                         return self.success_response(clean_result)
                     else:
                         # Handle error responses with helpful context  
                         error_msg = result.get("error", result.get("message", "Unknown error"))
-                        if "Page crashed" in error_msg:
-                            error_msg += "\n\nNote: Browser page crashes in Docker environments can be caused by insufficient browser launch options. Consider using the regular browser automation tool (sb_browser_tool) as an alternative."
                         clean_result["message"] = error_msg
                         return self.fail_response(clean_result)
 
@@ -324,7 +320,7 @@ class BrowserTool(SandboxToolsBase):
         ''')
     async def browser_navigate_to(self, url: str) -> ToolResult:
         """Navigate to a URL using Stagehand."""
-        logger.info(f"Browser navigating to: {url}")
+        logger.debug(f"Browser navigating to: {url}")
         return await self._execute_stagehand_api("navigate", {"url": url})
     
     @openapi_schema({
@@ -366,7 +362,7 @@ class BrowserTool(SandboxToolsBase):
         ''')
     async def browser_act(self, action: str, variables: dict = None, iframes: bool = False) -> ToolResult:
         """Perform any browser action using Stagehand."""
-        logger.info(f"Browser acting: {action} (variables={'***' if variables else None}, iframes={iframes})")
+        logger.debug(f"Browser acting: {action} (variables={'***' if variables else None}, iframes={iframes})")
         params = {"action": action, "iframes": iframes, "variables": variables}
         return await self._execute_stagehand_api("act", params)
     
@@ -382,11 +378,6 @@ class BrowserTool(SandboxToolsBase):
                         "type": "string",
                         "description": "What content to extract (e.g., 'extract all product prices', 'get the main heading', 'extract apartment listings with address and price')"
                     },
-                    "selector": {
-                        "type": "string",
-                        "description": "Optional XPath selector to reduce extraction scope to a specific element. Useful for reducing input tokens and increasing accuracy.",
-                        "default": None
-                    },
                     "iframes": {
                         "type": "boolean",
                         "description": "Whether to include iframe content in the extraction. Set to true if the target content is inside an iframe.",
@@ -401,15 +392,14 @@ class BrowserTool(SandboxToolsBase):
         <function_calls>
         <invoke name="browser_extract_content">
         <parameter name="instruction">extract all product names and prices from the main product list</parameter>
-        <parameter name="selector">//div[@class='product-list']</parameter>
         <parameter name="iframes">true</parameter>
         </invoke>
         </function_calls>
         ''')
-    async def browser_extract_content(self, instruction: str, selector: str = None, iframes: bool = False) -> ToolResult:
+    async def browser_extract_content(self, instruction: str, iframes: bool = False) -> ToolResult:
         """Extract structured content from the current page using Stagehand."""
-        logger.info(f"Browser extracting: {instruction} (selector={selector}, iframes={iframes})")
-        params = {"instruction": instruction, "iframes": iframes, "selector": selector}
+        logger.debug(f"Browser extracting: {instruction} (iframes={iframes})")
+        params = {"instruction": instruction, "iframes": iframes}
         return await self._execute_stagehand_api("extract", params)
     
     @openapi_schema({
@@ -438,5 +428,5 @@ class BrowserTool(SandboxToolsBase):
         ''')
     async def browser_screenshot(self, name: str = "screenshot") -> ToolResult:
         """Take a screenshot using Stagehand."""
-        logger.info(f"Browser taking screenshot: {name}")
+        logger.debug(f"Browser taking screenshot: {name}")
         return await self._execute_stagehand_api("screenshot", {"name": name})

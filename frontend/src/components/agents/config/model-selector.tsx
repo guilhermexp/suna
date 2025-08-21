@@ -26,7 +26,7 @@ import {
   DEFAULT_PREMIUM_MODEL_ID
 } from '@/components/thread/chat-input/_use-model-selection';
 import { useAvailableModels } from '@/hooks/react-query/subscriptions/use-billing';
-import { isLocalMode, isSelfHosted } from '@/lib/config';
+import { isLocalMode } from '@/lib/config';
 import { CustomModelDialog, CustomModelFormData } from '@/components/thread/chat-input/custom-model-dialog';
 import { PaywallDialog } from '@/components/payment/paywall-dialog';
 import { BillingModal } from '@/components/billing/billing-modal';
@@ -84,7 +84,7 @@ export function AgentModelSelector({
   }, [customModels]);
   
   const normalizeModelId = (modelId?: string): string => {
-    if (!modelId) return isLocalMode() ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID;
+    if (!modelId) return subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID;
     
     if (modelsData?.models) {
       const exactMatch = modelsData.models.find(m => m.short_name === modelId);
@@ -176,6 +176,10 @@ export function AgentModelSelector({
   }, [isOpen]);
 
   const handleSelect = (modelId: string) => {
+    console.log('🔧 AgentModelSelector: Selecting model:', modelId);
+    console.log('🔧 AgentModelSelector: Current selectedModel (normalized):', selectedModel);
+    console.log('🔧 AgentModelSelector: Current value prop:', value);
+    
     const isCustomModel = customModels.some(model => model.id === modelId);
     
     if (isCustomModel && isLocalMode()) {
@@ -184,15 +188,9 @@ export function AgentModelSelector({
       return;
     }
     
-    if (isLocalMode() || isSelfHosted() || canAccessModel(modelId)) {
-      let fullModelId = modelId;
-      if (modelsData?.models) {
-        const modelMatch = modelsData.models.find(m => m.short_name === modelId);
-        if (modelMatch) {
-          fullModelId = modelMatch.id;
-        }
-      }
-      onChange(fullModelId);
+    if (isLocalMode() || canAccessModel(modelId)) {
+      // Don't transform the modelId - pass it as-is to match what useModelSelection expects
+      onChange(modelId);
       setIsOpen(false);
     } else {
       setLockedModel(modelId);
@@ -201,9 +199,7 @@ export function AgentModelSelector({
   };
 
   const handleUpgradeClick = () => {
-    if (!isLocalMode() && !isSelfHosted()) {
-      setBillingModalOpen(true);
-    }
+    setBillingModalOpen(true);
   };
 
   const closePaywallDialog = () => {
@@ -310,7 +306,7 @@ export function AgentModelSelector({
     setCustomModels(updatedCustomModels);
     
     if (selectedModel === modelId) {
-      const defaultModel = isLocalMode() ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID;
+      const defaultModel = subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID;
       onChange(defaultModel);
     }
   };
@@ -570,6 +566,27 @@ export function AgentModelSelector({
                               </Tooltip>
                             </TooltipProvider>
                           ))}
+                          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/95 to-transparent flex items-end justify-center">
+                            <div className="w-full p-3">
+                              <div className="rounded-xl bg-gradient-to-br from-blue-50/80 to-blue-200/70 dark:from-blue-950/40 dark:to-blue-900/30 shadow-sm border border-blue-200/50 dark:border-blue-800/50 p-3">
+                                <div className="flex flex-col space-y-2">
+                                  <div className="flex items-center">
+                                    <Crown className="h-4 w-4 text-blue-500 mr-2 flex-shrink-0" />
+                                    <div>
+                                      <p className="text-sm font-medium">Unlock all models + higher limits</p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    className="w-full h-8 font-medium"
+                                    onClick={handleUpgradeClick}
+                                  >
+                                    Upgrade now
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </>
