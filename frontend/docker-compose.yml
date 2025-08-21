@@ -1,0 +1,25 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_VERCEL_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
+    env_file:
+      - .env.local
+    volumes:
+      # Para desenvolvimento, você pode descomentar estas linhas:
+      # - ./src:/app/src
+      # - ./public:/app/public
+      - ./.env.local:/app/.env.local:ro
+    restart: unless-stopped
+    networks:
+      - sunakortix
+
+networks:
+  sunakortix:
+    driver: bridge

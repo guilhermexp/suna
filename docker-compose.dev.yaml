@@ -1,0 +1,76 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  backend:
+    image: ghcr.io/suna-ai/suna-backend:latest
+    platform: linux/amd64
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./backend/.env:/app/.env
+    env_file:
+      - ./backend/.env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - REDIS_SSL=False
+      - SELF_HOSTED=true
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: uv run uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+
+  worker:
+    image: ghcr.io/suna-ai/suna-backend:latest
+    platform: linux/amd64
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: uv run dramatiq --skip-logging --processes 2 --threads 2 run_agent_background
+    volumes:
+      - ./backend:/app
+      - ./backend/.env:/app/.env:ro
+    env_file:
+      - ./backend/.env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - REDIS_SSL=False
+      - SELF_HOSTED=true
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - ./frontend/.env.local:/app/.env.local:ro
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_VERCEL_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_PUBLIC_SELF_HOSTED=true
+      - NODE_OPTIONS=--max-old-space-size=2048
+    depends_on:
+      - backend
