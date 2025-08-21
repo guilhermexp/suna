@@ -1,0 +1,167 @@
+#!/bin/bash
+
+# Cores para output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}================================================${NC}"
+echo -e "${BLUE}       SUNA UPDATE - Docker Clean & Rebuild${NC}"
+echo -e "${BLUE}================================================${NC}"
+echo ""
+
+# Função para perguntar ao usuário
+ask_confirmation() {
+    read -p "$1 (y/n): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo -e "${YELLOW}Operação cancelada pelo usuário.${NC}"
+        exit 0
+    fi
+}
+
+# Verificar se é help
+if [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
+    echo -e "${BLUE}Uso: ./suna-update [opções]${NC}"
+    echo ""
+    echo "Opções:"
+    echo "  dev, --dev    Usar docker-compose.dev.yml (desenvolvimento)"
+    echo "  prod, --prod  Usar docker-compose.yml (produção)"
+    echo "  --help, -h    Mostrar esta mensagem de ajuda"
+    echo ""
+    echo "Este script:"
+    echo "  1. Para todos os containers Docker"
+    echo "  2. Remove containers antigos"
+    echo "  3. Remove imagens antigas do projeto"
+    echo "  4. Opcionalmente remove volumes (dados persistentes)"
+    echo "  5. Opcionalmente limpa cache do Docker"
+    echo "  6. Reconstrói as imagens"
+    echo "  7. Inicia os novos containers"
+    echo ""
+    echo "Exemplo:"
+    echo "  ./suna-update dev   # Para ambiente de desenvolvimento"
+    echo "  ./suna-update       # Para ambiente de produção (padrão)"
+    exit 0
+fi
+
+# Detectar qual docker-compose usar
+COMPOSE_FILE="docker-compose.yml"
+if [ "$1" == "dev" ] || [ "$1" == "--dev" ]; then
+    COMPOSE_FILE="docker-compose.dev.yml"
+    echo -e "${YELLOW}Usando ambiente de desenvolvimento (docker-compose.dev.yml)${NC}"
+elif [ "$1" == "prod" ] || [ "$1" == "--prod" ]; then
+    COMPOSE_FILE="docker-compose.yml"
+    echo -e "${YELLOW}Usando ambiente de produção (docker-compose.yml)${NC}"
+else
+    echo -e "${YELLOW}Uso: ./suna-update [dev|prod]${NC}"
+    echo -e "${YELLOW}Defaulting para produção (docker-compose.yml)${NC}"
+fi
+echo ""
+
+# Verificar se o arquivo docker-compose existe
+if [ ! -f "$COMPOSE_FILE" ]; then
+    echo -e "${RED}Erro: Arquivo $COMPOSE_FILE não encontrado!${NC}"
+    exit 1
+fi
+
+# Mostrar containers em execução
+echo -e "${BLUE}1. Containers atualmente em execução:${NC}"
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+echo ""
+
+# Perguntar se quer continuar
+ask_confirmation "Deseja parar e remover todos os containers, imagens e volumes?"
+
+# Parar containers
+echo -e "${YELLOW}2. Parando containers...${NC}"
+docker-compose -f $COMPOSE_FILE down
+docker stop $(docker ps -aq) 2>/dev/null || true
+echo -e "${GREEN}✓ Containers parados${NC}"
+echo ""
+
+# Remover containers
+echo -e "${YELLOW}3. Removendo containers...${NC}"
+docker rm $(docker ps -aq) 2>/dev/null || true
+echo -e "${GREEN}✓ Containers removidos${NC}"
+echo ""
+
+# Remover imagens antigas do projeto
+echo -e "${YELLOW}4. Removendo imagens antigas do projeto...${NC}"
+# Remove imagens que começam com o nome do diretório atual (sunakortix)
+PROJECT_NAME=$(basename $(pwd))
+docker images | grep $PROJECT_NAME | awk '{print $3}' | xargs -r docker rmi -f 2>/dev/null || true
+# Remove imagens sem tag (dangling)
+docker image prune -f
+echo -e "${GREEN}✓ Imagens antigas removidas${NC}"
+echo ""
+
+# Opcional: Limpar volumes
+read -p "Deseja também remover volumes Docker? Isso apagará dados persistentes! (y/n): " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo -e "${YELLOW}5. Removendo volumes...${NC}"
+    docker volume prune -f
+    echo -e "${GREEN}✓ Volumes removidos${NC}"
+else
+    echo -e "${BLUE}5. Volumes mantidos${NC}"
+fi
+echo ""
+
+# Opcional: Limpar cache do builder
+read -p "Deseja limpar o cache do Docker builder? (y/n): " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo -e "${YELLOW}6. Limpando cache do builder...${NC}"
+    docker builder prune -f
+    echo -e "${GREEN}✓ Cache do builder limpo${NC}"
+else
+    echo -e "${BLUE}6. Cache do builder mantido${NC}"
+fi
+echo ""
+
+# Verificar .env.local
+if [ ! -f ".env.local" ]; then
+    echo -e "${RED}Aviso: Arquivo .env.local não encontrado!${NC}"
+    echo -e "${YELLOW}Certifique-se de criar o arquivo .env.local com as variáveis necessárias.${NC}"
+    ask_confirmation "Deseja continuar mesmo assim?"
+fi
+
+# Construir novas imagens
+echo -e "${YELLOW}7. Construindo novas imagens...${NC}"
+docker-compose -f $COMPOSE_FILE build --no-cache
+echo -e "${GREEN}✓ Imagens construídas${NC}"
+echo ""
+
+# Iniciar containers
+echo -e "${YELLOW}8. Iniciando containers...${NC}"
+docker-compose -f $COMPOSE_FILE up -d
+echo -e "${GREEN}✓ Containers iniciados${NC}"
+echo ""
+
+# Mostrar status final
+echo -e "${BLUE}9. Status final:${NC}"
+docker-compose -f $COMPOSE_FILE ps
+echo ""
+
+# Mostrar logs (últimas 20 linhas)
+echo -e "${BLUE}10. Últimas linhas dos logs:${NC}"
+docker-compose -f $COMPOSE_FILE logs --tail=20
+echo ""
+
+echo -e "${GREEN}================================================${NC}"
+echo -e "${GREEN}       ATUALIZAÇÃO CONCLUÍDA COM SUCESSO!${NC}"
+echo -e "${GREEN}================================================${NC}"
+echo ""
+echo -e "${BLUE}Comandos úteis:${NC}"
+echo -e "  ${YELLOW}docker-compose -f $COMPOSE_FILE logs -f${NC}  # Ver logs em tempo real"
+echo -e "  ${YELLOW}docker-compose -f $COMPOSE_FILE ps${NC}       # Ver status dos containers"
+echo -e "  ${YELLOW}docker-compose -f $COMPOSE_FILE stop${NC}     # Parar containers"
+echo -e "  ${YELLOW}docker-compose -f $COMPOSE_FILE start${NC}    # Iniciar containers"
+echo ""
+
+# Se for desenvolvimento, mostrar URL
+if [ "$COMPOSE_FILE" == "docker-compose.dev.yml" ]; then
+    echo -e "${GREEN}Aplicação disponível em: http://localhost:3000${NC}"
+fi

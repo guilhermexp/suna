@@ -18,6 +18,7 @@ export const useSubscription = createQueryHook(
   {
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: true,
+    enabled: process.env.NEXT_PUBLIC_SELF_HOSTED !== 'true',
   },
 );
 
@@ -40,6 +41,7 @@ export const useSubscriptionWithStreaming = (isStreaming: boolean = false) => {
     queryFn: getSubscription,
     staleTime: 1000 * 60 * 2, // 2 minutes
     refetchOnWindowFocus: true,
+    enabled: process.env.NEXT_PUBLIC_SELF_HOSTED !== 'true',
     refetchInterval: (data) => {
       // No refresh if tab is hidden
       if (!isVisible) return false;

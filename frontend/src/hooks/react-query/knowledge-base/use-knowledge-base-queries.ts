@@ -42,7 +42,7 @@ export function useKnowledgeBaseEntry(entryId: string) {
     queryKey: knowledgeBaseKeys.entry(entryId),
     queryFn: async (): Promise<KnowledgeBaseEntry> => {
       const headers = await getHeaders();
-      const response = await fetch(`${API_URL}/api/knowledge-base/${entryId}`, { headers });
+      const response = await fetch(`${API_URL}/knowledge-base/${entryId}`, { headers });
       
       if (!response.ok) {
         const error = await response.text();
@@ -62,7 +62,7 @@ export function useUpdateKnowledgeBaseEntry() {
   return useMutation({
     mutationFn: async ({ entryId, data }: { entryId: string; data: UpdateKnowledgeBaseEntryRequest }) => {
       const headers = await getHeaders();
-      const response = await fetch(`${API_URL}/api/knowledge-base/${entryId}`, {
+      const response = await fetch(`${API_URL}/knowledge-base/${entryId}`, {
         method: 'PUT',
         headers: {
           ...headers,
@@ -95,7 +95,7 @@ export function useDeleteKnowledgeBaseEntry() {
   return useMutation({
     mutationFn: async (entryId: string) => {
       const headers = await getHeaders();
-      const response = await fetch(`${API_URL}/api/knowledge-base/${entryId}`, {
+      const response = await fetch(`${API_URL}/knowledge-base/${entryId}`, {
         method: 'DELETE',
         headers,
       });
@@ -124,7 +124,7 @@ export function useAgentKnowledgeBaseEntries(agentId: string, includeInactive = 
     queryKey: knowledgeBaseKeys.agent(agentId),
     queryFn: async (): Promise<KnowledgeBaseListResponse> => {
       const headers = await getHeaders();
-      const url = new URL(`${API_URL}/api/knowledge-base/agents/${agentId}`);
+      const url = new URL(`${API_URL}/knowledge-base/agents/${agentId}`);
       url.searchParams.set('include_inactive', includeInactive.toString());
       
       const response = await fetch(url.toString(), { headers });
@@ -151,7 +151,7 @@ export function useCreateAgentKnowledgeBaseEntry() {
   return useMutation({
     mutationFn: async ({ agentId, data }: { agentId: string; data: CreateKnowledgeBaseEntryRequest }) => {
       const headers = await getHeaders();
-      const response = await fetch(`${API_URL}/api/knowledge-base/agents/${agentId}`, {
+      const response = await fetch(`${API_URL}/knowledge-base/agents/${agentId}`, {
         method: 'POST',
         headers: {
           ...headers,
@@ -185,7 +185,7 @@ export function useAgentKnowledgeBaseContext(agentId: string, maxTokens = 4000) 
     queryKey: knowledgeBaseKeys.agentContext(agentId),
     queryFn: async () => {
       const headers = await getHeaders();
-      const url = new URL(`${API_URL}/api/knowledge-base/agents/${agentId}/context`);
+      const url = new URL(`${API_URL}/knowledge-base/agents/${agentId}/context`);
       url.searchParams.set('max_tokens', maxTokens.toString());
       
       const response = await fetch(url.toString(), { headers });
@@ -222,7 +222,7 @@ export function useUploadAgentFiles() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch(`${API_URL}/api/knowledge-base/agents/${agentId}/upload-file`, {
+      const response = await fetch(`${API_URL}/knowledge-base/agents/${agentId}/upload-file`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -255,7 +255,7 @@ export function useCloneGitRepository() {
   return useMutation({
     mutationFn: async ({ agentId, git_url, branch = 'main' }: GitCloneRequest): Promise<CloneResponse> => {
       const headers = await getHeaders();
-      const response = await fetch(`${API_URL}/api/knowledge-base/agents/${agentId}/clone-git-repo`, {
+      const response = await fetch(`${API_URL}/knowledge-base/agents/${agentId}/clone-git-repo`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ git_url, branch }),
@@ -286,7 +286,7 @@ export function useAgentProcessingJobs(agentId: string) {
     queryKey: knowledgeBaseKeys.processingJobs(agentId),
     queryFn: async (): Promise<ProcessingJobsResponse> => {
       const headers = await getHeaders();
-      const response = await fetch(`${API_URL}/api/knowledge-base/agents/${agentId}/processing-jobs`, { headers });
+      const response = await fetch(`${API_URL}/knowledge-base/agents/${agentId}/processing-jobs`, { headers });
       
       if (!response.ok) {
         // Handle 403 gracefully by returning empty result

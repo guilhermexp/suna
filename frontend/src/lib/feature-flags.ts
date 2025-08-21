@@ -21,9 +21,10 @@ const CACHE_DURATION = 5 * 60 * 1000;
 
 let globalFlagsCache: { flags: Record<string, boolean>; timestamp: number } | null = null;
 
-// Default flags - todas ativadas por padrão
+// Default flags - TODAS ativadas por padrão
 const DEFAULT_FLAGS: Record<string, boolean> = {
   'custom_agents': true,
+  'agent_marketplace': true,
   'notes': true,
   'chat': true,
   'collaboration': true,
@@ -33,6 +34,39 @@ const DEFAULT_FLAGS: Record<string, boolean> = {
   'analytics': true,
   'billing': true,
   'admin': true,
+  'mcp_servers': true,
+  'composio': true,
+  'workflows': true,
+  'triggers': true,
+  'phone_verification': true,
+  'secure_mcp': true,
+  'knowledge_base': true,
+  'credential_profiles': true,
+  'agent_tools': true,
+  'agent_export_import': true,
+  'agent_templates': true,
+  'api_keys': true,
+  'teams': true,
+  'oauth_integrations': true,
+  'pipedream': true,
+  'slack': true,
+  'github': true,
+  'google': true,
+  'microsoft': true,
+  'discord': true,
+  'telegram': true,
+  'whatsapp': true,
+  'webhooks': true,
+  'cron_jobs': true,
+  'event_triggers': true,
+  'real_time_updates': true,
+  'advanced_settings': true,
+  'developer_mode': true,
+  'debug_mode': true,
+  'premium_features': true,
+  'enterprise_features': true,
+  'beta_features': true,
+  'experimental_features': true,
 };
 
 export class FeatureFlagManager {
@@ -54,7 +88,7 @@ export class FeatureFlagManager {
         return cached.value;
       }
       
-      const response = await fetch(`${API_URL}/api/feature-flags/${flagName}`, {
+      const response = await fetch(`${API_URL}/feature-flags/${flagName}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -84,7 +118,7 @@ export class FeatureFlagManager {
   
   async getFlagDetails(flagName: string): Promise<FeatureFlag | null> {
     try {
-      const response = await fetch(`${API_URL}/api/feature-flags/${flagName}`, {
+      const response = await fetch(`${API_URL}/feature-flags/${flagName}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -110,7 +144,7 @@ export class FeatureFlagManager {
         return globalFlagsCache.flags;
       }
       
-      const response = await fetch(`${API_URL}/api/feature-flags`, {
+      const response = await fetch(`${API_URL}/feature-flags`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -238,7 +272,7 @@ export const featureFlagKeys = {
 // Query functions
 const fetchFeatureFlag = async (flagName: string): Promise<boolean> => {
   try {
-    const response = await fetch(`${API_URL}/api/feature-flags/${flagName}`, {
+    const response = await fetch(`${API_URL}/feature-flags/${flagName}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -259,7 +293,7 @@ const fetchFeatureFlag = async (flagName: string): Promise<boolean> => {
 };
 
 const fetchFeatureFlagDetails = async (flagName: string): Promise<FeatureFlag> => {
-  const response = await fetch(`${API_URL}/api/feature-flags/${flagName}`, {
+  const response = await fetch(`${API_URL}/feature-flags/${flagName}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -276,7 +310,7 @@ const fetchFeatureFlagDetails = async (flagName: string): Promise<FeatureFlag> =
 
 const fetchAllFeatureFlags = async (): Promise<Record<string, boolean>> => {
   try {
-    const response = await fetch(`${API_URL}/api/feature-flags`, {
+    const response = await fetch(`${API_URL}/feature-flags`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

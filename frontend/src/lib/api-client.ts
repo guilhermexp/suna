@@ -296,22 +296,22 @@ export const supabaseClient = {
 
 export const backendApi = {
   get: <T = any>(endpoint: string, options?: Omit<RequestInit & ApiClientOptions, 'method' | 'body'>) =>
-    apiClient.get<T>(`${API_URL}/api${endpoint}`, options),
+    apiClient.get<T>(`${API_URL}${endpoint}`, options),
 
   post: <T = any>(endpoint: string, data?: any, options?: Omit<RequestInit & ApiClientOptions, 'method'>) =>
-    apiClient.post<T>(`${API_URL}/api${endpoint}`, data, options),
+    apiClient.post<T>(`${API_URL}${endpoint}`, data, options),
 
   put: <T = any>(endpoint: string, data?: any, options?: Omit<RequestInit & ApiClientOptions, 'method'>) =>
-    apiClient.put<T>(`${API_URL}/api${endpoint}`, data, options),
+    apiClient.put<T>(`${API_URL}${endpoint}`, data, options),
 
   patch: <T = any>(endpoint: string, data?: any, options?: Omit<RequestInit & ApiClientOptions, 'method'>) =>
-    apiClient.patch<T>(`${API_URL}/api${endpoint}`, data, options),
+    apiClient.patch<T>(`${API_URL}${endpoint}`, data, options),
 
   delete: <T = any>(endpoint: string, options?: Omit<RequestInit & ApiClientOptions, 'method' | 'body'>) =>
-    apiClient.delete<T>(`${API_URL}/api${endpoint}`, options),
+    apiClient.delete<T>(`${API_URL}${endpoint}`, options),
 
   upload: <T = any>(endpoint: string, formData: FormData, options?: Omit<RequestInit & ApiClientOptions, 'method' | 'body'>) =>
-    apiClient.upload<T>(`${API_URL}/api${endpoint}`, formData, options),
+    apiClient.upload<T>(`${API_URL}${endpoint}`, formData, options),
 };
 
 // API Key Management API

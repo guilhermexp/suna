@@ -27,7 +27,7 @@ import { IntegrationsRegistry } from '@/components/agents/integrations-registry'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useSubscriptionWithStreaming } from '@/hooks/react-query/subscriptions/use-subscriptions';
 import { isLocalMode } from '@/lib/config';
-import { BillingModal } from '@/components/billing/billing-modal';
+// BillingModal removed for self-hosted
 import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
 
@@ -141,7 +141,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     const [registryDialogOpen, setRegistryDialogOpen] = useState(false);
     const [showSnackbar, setShowSnackbar] = useState(defaultShowSnackbar);
     const [userDismissedUsage, setUserDismissedUsage] = useState(false);
-    const [billingModalOpen, setBillingModalOpen] = useState(false);
+    // BillingModal removed for self-hosted
 
     const {
       selectedModel,
@@ -166,29 +166,16 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     // Show usage preview logic:
     // - Always show to free users when showToLowCreditUsers is true
     // - For paid users, only show when they're at 70% or more of their cost limit (30% or below remaining)
-    const shouldShowUsage = !isLocalMode() && subscriptionData && showToLowCreditUsers && (() => {
-      // Free users: always show
-      if (subscriptionStatus === 'no_subscription') {
-        return true;
-      }
+    // DISABLED for self-hosted installations
+    const shouldShowUsage = false;
 
-      // Paid users: only show when at 70% or more of cost limit
-      const currentUsage = subscriptionData.current_usage || 0;
-      const costLimit = subscriptionData.cost_limit || 0;
-
-      if (costLimit === 0) return false; // No limit set
-
-      return currentUsage >= (costLimit * 0.7); // 70% or more used (30% or less remaining)
-    })();
-
-    // Auto-show usage preview when we have subscription data
+    // Auto-show usage preview disabled for self-hosted
     useEffect(() => {
-      if (shouldShowUsage && defaultShowSnackbar !== false && !userDismissedUsage && (showSnackbar === false || showSnackbar === defaultShowSnackbar)) {
-        setShowSnackbar('upgrade');
-      } else if (!shouldShowUsage && showSnackbar !== false) {
+      // Always keep showSnackbar as false for self-hosted
+      if (showSnackbar !== false) {
         setShowSnackbar(false);
       }
-    }, [subscriptionData, showSnackbar, defaultShowSnackbar, shouldShowUsage, subscriptionStatus, showToLowCreditUsers, userDismissedUsage]);
+    }, [showSnackbar]);
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -342,7 +329,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
             showUsagePreview={showSnackbar}
             subscriptionData={subscriptionData}
             onCloseUsage={() => { setShowSnackbar(false); setUserDismissedUsage(true); }}
-            onOpenUpgrade={() => setBillingModalOpen(true)}
+            onOpenUpgrade={() => {}}
             isVisible={showToolPreview || !!showSnackbar}
           />
 
@@ -516,10 +503,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
               />
             </DialogContent>
           </Dialog>
-          <BillingModal
-            open={billingModalOpen}
-            onOpenChange={setBillingModalOpen}
-          />
+          {/* BillingModal removed for self-hosted */}
         </div>
       </div>
     );

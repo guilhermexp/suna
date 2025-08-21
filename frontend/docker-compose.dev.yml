@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: node:22-slim
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_VERCEL_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+    env_file:
+      - .env.local
+    command: sh -c "npm ci --legacy-peer-deps || true && npm run dev"

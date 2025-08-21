@@ -9,6 +9,7 @@ export const useAvailableModels = createQueryHook<AvailableModelsResponse, Error
       staleTime: 5 * 60 * 1000,
       refetchOnWindowFocus: false,
       retry: 2,
+      enabled: process.env.NEXT_PUBLIC_SELF_HOSTED !== 'true',
       select: (data) => {
         return {
           ...data,

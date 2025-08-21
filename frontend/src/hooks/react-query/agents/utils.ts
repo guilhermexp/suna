@@ -177,7 +177,7 @@ export const getAgents = async (params: AgentsParams = {}): Promise<AgentsRespon
     if (params.has_agentpress_tools !== undefined) queryParams.append('has_agentpress_tools', params.has_agentpress_tools.toString());
     if (params.tools) queryParams.append('tools', params.tools);
 
-    const url = `${API_URL}/api/agents${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `${API_URL}/agents${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
     const response = await fetch(url, {
       method: 'GET',
@@ -213,7 +213,7 @@ export const getAgent = async (agentId: string): Promise<Agent> => {
       throw new Error('You must be logged in to get agent details');
     }
 
-    const response = await fetch(`${API_URL}/api/agents/${agentId}`, {
+    const response = await fetch(`${API_URL}/agents/${agentId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -247,7 +247,7 @@ export const createAgent = async (agentData: AgentCreateRequest): Promise<Agent>
       throw new Error('You must be logged in to create an agent');
     }
 
-    const response = await fetch(`${API_URL}/api/agents`, {
+    const response = await fetch(`${API_URL}/agents`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -293,7 +293,7 @@ export const updateAgent = async (agentId: string, agentData: AgentUpdateRequest
       throw new Error('You must be logged in to update an agent');
     }
 
-    const response = await fetch(`${API_URL}/api/agents/${agentId}`, {
+    const response = await fetch(`${API_URL}/agents/${agentId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -328,7 +328,7 @@ export const deleteAgent = async (agentId: string): Promise<void> => {
       throw new Error('You must be logged in to delete an agent');
     }
 
-    const response = await fetch(`${API_URL}/api/agents/${agentId}`, {
+    const response = await fetch(`${API_URL}/agents/${agentId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -359,7 +359,7 @@ export const getThreadAgent = async (threadId: string): Promise<ThreadAgentRespo
       throw new Error('You must be logged in to get thread agent');
     }
 
-    const response = await fetch(`${API_URL}/api/thread/${threadId}/agent`, {
+    const response = await fetch(`${API_URL}/thread/${threadId}/agent`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -393,7 +393,7 @@ export const getAgentBuilderChatHistory = async (agentId: string): Promise<{mess
       throw new Error('You must be logged in to get agent builder chat history');
     }
 
-    const response = await fetch(`${API_URL}/api/agents/${agentId}/builder-chat-history`, {
+    const response = await fetch(`${API_URL}/agents/${agentId}/builder-chat-history`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -529,7 +529,7 @@ export const getAgentVersions = async (agentId: string): Promise<AgentVersion[]>
       throw new Error('You must be logged in to get agent versions');
     }
 
-    const response = await fetch(`${API_URL}/api/agents/${agentId}/versions`, {
+    const response = await fetch(`${API_URL}/agents/${agentId}/versions`, {
       headers: {
         'Authorization': `Bearer ${session.access_token}`,
       },
@@ -564,7 +564,7 @@ export const createAgentVersion = async (
       throw new Error('You must be logged in to create agent version');
     }
 
-    const response = await fetch(`${API_URL}/api/agents/${agentId}/versions`, {
+    const response = await fetch(`${API_URL}/agents/${agentId}/versions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -603,7 +603,7 @@ export const activateAgentVersion = async (
     }
 
     const response = await fetch(
-      `${API_URL}/api/agents/${agentId}/versions/${versionId}/activate`,
+      `${API_URL}/agents/${agentId}/versions/${versionId}/activate`,
       {
         method: 'PUT',
         headers: {
@@ -639,7 +639,7 @@ export const getAgentVersion = async (
     }
 
     const response = await fetch(
-      `${API_URL}/api/agents/${agentId}/versions/${versionId}`,
+      `${API_URL}/agents/${agentId}/versions/${versionId}`,
       {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,

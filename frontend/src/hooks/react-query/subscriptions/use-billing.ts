@@ -16,6 +16,7 @@ export const useAvailableModels = createQueryHook(
   {
     staleTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
+    enabled: process.env.NEXT_PUBLIC_SELF_HOSTED !== 'true',
   }
 );
 
@@ -25,6 +26,7 @@ export const useBillingStatus = createQueryHook(
   {
     staleTime: 2 * 60 * 1000,
     refetchOnWindowFocus: true,
+    enabled: process.env.NEXT_PUBLIC_SELF_HOSTED !== 'true',
   }
 );
 
@@ -51,5 +53,6 @@ export const useUsageLogs = (page: number = 0, itemsPerPage: number = 1000) =>
       staleTime: 30 * 1000, // 30 seconds
       refetchOnMount: true,
       refetchOnWindowFocus: false,
+      enabled: process.env.NEXT_PUBLIC_SELF_HOSTED !== 'true',
     }
   )(); 

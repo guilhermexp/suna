@@ -42,7 +42,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useFeatureFlags } from '@/lib/feature-flags';
-import { useNotesCount } from '@/hooks/useNotesCount';
 import posthog from 'posthog-js';
 // Floating mobile menu button component
 function FloatingMobileMenuButton() {
@@ -94,7 +93,6 @@ export function SidebarLeft({
   const marketplaceEnabled = flags.agent_marketplace;
   const [showNewAgentDialog, setShowNewAgentDialog] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const { count: notesCount } = useNotesCount(userId);
 
   // Close mobile menu on page navigation
   useEffect(() => {
@@ -202,11 +200,6 @@ export function SidebarLeft({
               <FileText className="h-4 w-4 mr-1" />
               <span className="flex items-center justify-between w-full">
                 Notas
-                {notesCount > 0 && (
-                  <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-primary rounded-full">
-                    {notesCount}
-                  </span>
-                )}
               </span>
             </SidebarMenuButton>
           </Link>
