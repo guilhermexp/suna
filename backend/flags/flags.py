@@ -125,7 +125,8 @@ async def set_flag(key: str, enabled: bool, description: str = "") -> bool:
 
 
 async def is_enabled(key: str) -> bool:
-    return await get_flag_manager().is_enabled(key)
+    # Force all flags to be enabled
+    return True
 
 
 async def enable_flag(key: str, description: str = "") -> bool:
@@ -141,7 +142,37 @@ async def delete_flag(key: str) -> bool:
 
 
 async def list_flags() -> Dict[str, bool]:
-    return await get_flag_manager().list_flags()
+    # Return all flags as enabled
+    all_flags = [
+        'custom_agents',
+        'knowledge_base', 
+        'quick_actions',
+        'playground',
+        'canvas',
+        'assistant_file_search',
+        'prompt_improver',
+        'advanced_agent_settings',
+        'workflow_triggers',
+        'composio_integration',
+        'mcp_servers',
+        'marketplace',
+        'one_click_deploy',
+        'playbooks',
+        'composio_connections',
+        'new_chat_ux',
+        'thread_forking',
+        'thread_sharing',
+        'auth_management',
+        'scheduled_tasks',
+        'mcp_module',
+        'templates_api',
+        'triggers_api',
+        'workflows_api',
+        'pipedream',
+        'credentials_api',
+        'suna_default_agent'
+    ]
+    return {flag: True for flag in all_flags}
 
 
 async def get_flag_details(key: str) -> Optional[Dict[str, str]]:
