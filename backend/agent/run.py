@@ -26,7 +26,8 @@ from services.billing import check_billing_status
 from agent.tools.sb_vision_tool import SandboxVisionTool
 from agent.tools.sb_image_edit_tool import SandboxImageEditTool
 from agent.tools.sb_presentation_outline_tool import SandboxPresentationOutlineTool
-from agent.tools.sb_presentation_tool_v2 import SandboxPresentationToolV2
+from agent.tools.sb_presentation_tool import SandboxPresentationTool
+
 from services.langfuse import langfuse
 from langfuse.client import StatefulTraceClient
 
@@ -46,7 +47,7 @@ class AgentConfig:
     stream: bool
     native_max_auto_continues: int = 25
     max_iterations: int = 100
-    model_name: str = "openrouter/moonshotai/kimi-k2"
+    model_name: str = "openai/gpt-5-mini"
     enable_thinking: Optional[bool] = False
     reasoning_effort: Optional[str] = 'low'
     enable_context_manager: bool = True
@@ -108,7 +109,8 @@ class ToolManager:
             ('sb_vision_tool', SandboxVisionTool, {'project_id': self.project_id, 'thread_id': self.thread_id, 'thread_manager': self.thread_manager}),
             ('sb_image_edit_tool', SandboxImageEditTool, {'project_id': self.project_id, 'thread_id': self.thread_id, 'thread_manager': self.thread_manager}),
             ('sb_presentation_outline_tool', SandboxPresentationOutlineTool, {'project_id': self.project_id, 'thread_manager': self.thread_manager}),
-            ('sb_presentation_tool_v2', SandboxPresentationToolV2, {'project_id': self.project_id, 'thread_manager': self.thread_manager}),
+            ('sb_presentation_tool', SandboxPresentationTool, {'project_id': self.project_id, 'thread_manager': self.thread_manager}),
+
             ('sb_sheets_tool', SandboxSheetsTool, {'project_id': self.project_id, 'thread_manager': self.thread_manager}),
             ('sb_web_dev_tool', SandboxWebDevTool, {'project_id': self.project_id, 'thread_id': self.thread_id, 'thread_manager': self.thread_manager}),
         ]
@@ -529,7 +531,7 @@ class AgentRunner:
         
         # Special handling for presentation tools
         if 'sb_presentation_tool' in disabled_tools:
-            disabled_tools.extend(['sb_presentation_outline_tool', 'sb_presentation_tool_v2'])
+            disabled_tools.extend(['sb_presentation_outline_tool'])
         
         logger.debug(f"Disabled tools from config: {disabled_tools}")
         return disabled_tools
@@ -738,7 +740,7 @@ async def run_agent(
     thread_manager: Optional[ThreadManager] = None,
     native_max_auto_continues: int = 25,
     max_iterations: int = 100,
-    model_name: str = "openrouter/moonshotai/kimi-k2",
+    model_name: str = "openai/gpt-5-mini",
     enable_thinking: Optional[bool] = False,
     reasoning_effort: Optional[str] = 'low',
     enable_context_manager: bool = True,
@@ -748,10 +750,10 @@ async def run_agent(
     target_agent_id: Optional[str] = None
 ):
     effective_model = model_name
-    if model_name == "openrouter/moonshotai/kimi-k2" and agent_config and agent_config.get('model'):
+    if model_name == "openai/gpt-5-mini" and agent_config and agent_config.get('model'):
         effective_model = agent_config['model']
         logger.debug(f"Using model from agent config: {effective_model} (no user selection)")
-    elif model_name != "openrouter/moonshotai/kimi-k2":
+    elif model_name != "openai/gpt-5-mini":
         logger.debug(f"Using user-selected model: {effective_model}")
     else:
         logger.debug(f"Using default model: {effective_model}")

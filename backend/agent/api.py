@@ -29,11 +29,12 @@ from .config_helper import extract_agent_config, build_unified_config
 from .utils import check_agent_run_limit
 from .versioning.version_service import get_version_service
 from .versioning.api import router as version_router, initialize as initialize_versioning
+from .tools.sb_presentation_tool import SandboxPresentationTool
 
 # Helper for version service
 async def _get_version_service():
     return await get_version_service()
-from .tools.sb_presentation_tool_v2 import SandboxPresentationToolV2
+
 
 router = APIRouter()
 router.include_router(version_router)
@@ -987,7 +988,7 @@ async def initiate_agent_with_files(
     logger.debug(f"Original model_name from request: {model_name}")
 
     if model_name is None:
-        model_name = "openrouter/moonshotai/kimi-k2"
+        model_name = "openai/gpt-5-mini"
         logger.debug(f"Using default model: {model_name}")
 
     # Log the model name after alias resolution
@@ -3559,7 +3560,7 @@ async def export_presentation(
         
         thread_manager = ThreadManager()
         
-        presentation_tool = SandboxPresentationToolV2(
+        presentation_tool = SandboxPresentationTool(
             project_id=project_id,
             thread_manager=thread_manager
         )
